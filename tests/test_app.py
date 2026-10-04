@@ -170,3 +170,9 @@ def test_same_session_parallel_answers_are_serialized():
     [t.start() for t in ts]
     [t.join() for t in ts]
     assert codes.count(200) == s["total"] and codes.count(400) == 6 - s["total"]
+
+
+def test_ui_has_voice_controls():
+    html = c.get("/").text
+    for needle in ('id="vAccent"', 'en-IN', 'id="vRate"', "localStorage", "speechSynthesis"):
+        assert needle in html

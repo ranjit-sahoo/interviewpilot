@@ -58,7 +58,16 @@ button:disabled{opacity:.5;cursor:wait}button:focus-visible,input:focus-visible,
 <section id="t-interview" class="card hide">
   <div id="ivSetup"><button id="btnStart" class="alt">Start mock interview</button>
     <span class="toggle" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
-    <div class="note" id="voiceNote"></div></div>
+    <div class="note" id="voiceNote"></div>
+    <div id="voiceOpts" class="hide">
+      <label for="vAccent">Interviewer accent</label>
+      <select id="vAccent"><option value="en-US">US English</option><option value="en-IN">Indian English</option></select>
+      <label for="vVoice">Voice</label><select id="vVoice"></select>
+      <label for="vRate">Speaking speed: <span id="vRateVal"></span></label>
+      <input type="range" id="vRate" min="0.6" max="1.1" step="0.05" aria-label="Speaking speed">
+      <button id="vTest" class="ghost">Hear a sample</button>
+      <div class="note">Voices come from your browser. Chrome and Edge on desktop usually have the most natural ones.</div>
+    </div></div>
   <div id="interview" class="hide">
     <div><span class="pill" id="qnum"></span><span class="pill" id="qtype"></span></div>
     <h3 id="qtext"></h3>
@@ -155,11 +164,29 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;const TTS=wind
 let rec=null,listening=false,baseText='';
 $('voiceNote').textContent=(SR&&TTS)?'Voice mode: the interviewer asks aloud and you answer by speaking. Your browser will ask for microphone permission once.':'Voice mode needs Chrome, Edge or Safari. Typing works everywhere.';
 function setMode(v){if(v&&!(SR&&TTS)){$('voiceNote').textContent='Voice is not supported in this browser. Use Chrome, Edge or Safari, or type your answers.';return}
-  voice=v;$('mText').classList.toggle('on',!v);$('mVoice').classList.toggle('on',v);$('micBar').classList.toggle('hide',!v);if(!v){stopMic();if(TTS)TTS.cancel()}}
+  voice=v;$('mText').classList.toggle('on',!v);$('mVoice').classList.toggle('on',v);$('micBar').classList.toggle('hide',!v);$('voiceOpts').classList.toggle('hide',!v);if(v)refreshVoices();if(!v){stopMic();if(TTS)TTS.cancel()}}
 $('mText').onclick=()=>setMode(false);$('mVoice').onclick=()=>setMode(true);
-function speak(text,onend){if(!voice||!TTS){onend&&onend();return}TTS.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.95;
-  let done=false;const fin=()=>{if(!done){done=true;onend&&onend()}};u.onend=fin;u.onerror=fin;TTS.speak(u)}
-function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=country==='India'?'en-IN':'en-US';rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
+const VK='ip_voice';let prefs={accent:null,voice:'',rate:0.8};try{const sv=JSON.parse(localStorage.getItem(VK)||'{}');if(sv&&typeof sv==='object')prefs=Object.assign(prefs,sv);prefs.rate=Math.min(1.1,Math.max(0.6,Number(prefs.rate)||0.8))}catch(e){}
+function savePrefs(){try{localStorage.setItem(VK,JSON.stringify(prefs))}catch(e){}}
+function voiceScore(v){const n=v.name.toLowerCase();let sc=0;if(/natural|neural|online/.test(n))sc+=5;if(/google|samantha|karen|daniel|rishi|veena|ravi|heera|neerja|prabhat|aria|jenny|guy/.test(n))sc+=3;if(!v.localService)sc+=1;if(/compact|espeak/.test(n))sc-=3;return sc}
+function voicesFor(lang){if(!TTS)return[];const all=TTS.getVoices().filter(v=>v.lang&&v.lang.replace('_','-').toLowerCase()===lang.toLowerCase());
+  const base=lang.slice(0,2);const pool=all.length?all:TTS.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith(base));return pool.sort((a,b)=>voiceScore(b)-voiceScore(a))}
+function refreshVoices(){if(!TTS)return;const acc=prefs.accent||(country==='India'?'en-IN':'en-US');$('vAccent').value=acc;
+  const vs=voicesFor(acc);$('vVoice').innerHTML=vs.length?vs.map(v=>`<option value="${esc(v.name)}">${esc(v.name)}</option>`).join(''):'<option value="">Browser default</option>';
+  if(vs.some(v=>v.name===prefs.voice))$('vVoice').value=prefs.voice;else $('vVoice').value=vs[0]?vs[0].name:'';
+  $('vRate').value=prefs.rate;$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'+(prefs.rate<=0.85?' (slow and clear)':'')}
+if(TTS){TTS.onvoiceschanged=refreshVoices;refreshVoices()}
+$('vAccent').onchange=()=>{prefs.accent=$('vAccent').value;prefs.voice='';savePrefs();refreshVoices()};
+$('vVoice').onchange=()=>{prefs.voice=$('vVoice').value;savePrefs()};
+$('vRate').oninput=()=>{prefs.rate=parseFloat($('vRate').value);savePrefs();$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'};
+$('vTest').onclick=()=>speak('Hello, welcome to your interview. Please tell me about yourself, and take your time.',null,true);
+// Speak sentence by sentence with short pauses so it sounds like a person, not a stream.
+function speak(text,onend,force){if(!(voice||force)||!TTS){onend&&onend();return}TTS.cancel();
+  const acc=prefs.accent||(country==='India'?'en-IN':'en-US');const v=voicesFor(acc).find(x=>x.name===prefs.voice)||voicesFor(acc)[0];
+  const parts=String(text).match(/[^.!?]+[.!?]*/g)||[String(text)];let i=0,done=false;const fin=()=>{if(!done){done=true;onend&&onend()}};
+  const next=()=>{if(i>=parts.length)return fin();const t=parts[i++].trim();if(!t)return next();const u=new SpeechSynthesisUtterance(t);u.lang=acc;if(v)u.voice=v;u.rate=prefs.rate;u.pitch=1;
+    u.onend=()=>setTimeout(next,350);u.onerror=fin;TTS.speak(u)};next()}
+function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||(country==='India'?'en-IN':'en-US');rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
   rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('ans').value=(baseText?baseText+' ':'')+t.trim()};
   rec.onerror=e=>{listening=false;$('btnMic').textContent='Start speaking';$('micState').textContent=e.error==='not-allowed'?'Microphone blocked. Allow it in the browser address bar, or switch to Type.':e.error==='no-speech'?'No speech heard. Try again.':'Mic problem ('+e.error+'). You can type instead.'};
   rec.onend=()=>{listening=false;$('btnMic').textContent='Start speaking';if(!$('micState').textContent.startsWith('Mic')&&!$('micState').textContent.includes('blocked'))$('micState').innerHTML='Review or edit your answer, then submit.'};
