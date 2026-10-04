@@ -53,6 +53,15 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 .toggle{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-left:8px;vertical-align:bottom}.toggle button{margin:0;border-radius:0;background:var(--card2);color:var(--mute);padding:9px 18px;box-shadow:none}.toggle button.on{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff}
 .foot{margin-top:40px;text-align:center;color:var(--mute);font-size:13px}
 @media(max-width:640px){.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}.card{padding:16px}.tabs button{padding:9px 12px;font-size:14px;flex:none}}
+
+#rbPrev{background:#fff;color:#111;border-radius:10px;padding:28px 32px;margin-top:14px;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
+#rbPrev h1{margin:0;font-size:24px;color:#111}#rbPrev h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px;padding-bottom:3px;border-bottom:1.5px solid #333;color:#111}
+#rbPrev ul{margin:4px 0 6px 18px;padding:0}#rbPrev .r{display:flex;justify-content:space-between;gap:12px;font-weight:600}#rbPrev .m{color:#555;font-weight:400}
+#rbPrev.classic{font-family:Georgia,'Times New Roman',serif}#rbPrev.classic .hd{text-align:center}
+#rbPrev.modern{font-family:system-ui,Arial,sans-serif}#rbPrev.modern h1,#rbPrev.modern h2{color:#2a55c8;border-color:#2a55c8}
+#rbPrev.compact{font-family:system-ui,Arial,sans-serif;font-size:12px;line-height:1.35;padding:20px 24px}#rbPrev.compact h1{font-size:20px}
+.rbe{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+@media print{body *{visibility:hidden}#rbPrev,#rbPrev *{visibility:visible}#rbPrev{position:absolute;left:0;top:0;width:100%;margin:0;border-radius:0;padding:0.4in}@page{margin:0.4in}}
 </style></head><body><div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
@@ -73,7 +82,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 
 <div class="tabs" id="tabs" role="tablist">
   <button data-t="review" class="on">Resume Review</button><button data-t="match">JD Match</button>
-  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="recruiter">Recruiter Mode</button>
+  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button>
 </div>
 
 <section id="t-review" class="card"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
@@ -139,6 +148,26 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   </div>
 </section>
 
+<section id="t-builder" class="card hide">
+  <p class="note">Build an ATS-friendly resume. Fill the form, pick a template, and download a PDF. Your draft is saved in this browser only.</p>
+  <button id="rbFill" class="alt">Fill from the resume I pasted above</button><span id="rbBusy" class="pill hide">reading...</span>
+  <label for="rbTpl">Template</label><select id="rbTpl"><option value="classic">Classic</option><option value="modern">Modern</option><option value="compact">Compact</option></select>
+  <div id="rbForm">
+    <label>Name</label><input id="rb_name" maxlength="80"><label>Headline (e.g. QA Automation Engineer)</label><input id="rb_title" maxlength="100">
+    <label>Email</label><input id="rb_email" maxlength="120"><label>Phone</label><input id="rb_phone" maxlength="40">
+    <label>Location</label><input id="rb_location" maxlength="100"><label>Links (comma separated, e.g. LinkedIn, GitHub)</label><input id="rb_links" maxlength="400">
+    <label>Summary</label><textarea id="rb_summary" style="min-height:80px" maxlength="700"></textarea>
+    <button id="rbSum" class="ghost">Write a summary for me</button>
+    <h3>Experience</h3><div id="rbExp"></div><button id="rbAddExp" class="ghost">+ Add job</button>
+    <h3>Education</h3><div id="rbEdu"></div><button id="rbAddEdu" class="ghost">+ Add education</button>
+    <label>Skills (comma separated)</label><textarea id="rb_skills" style="min-height:60px"></textarea>
+    <h3>Projects (optional)</h3><div id="rbPrj"></div><button id="rbAddPrj" class="ghost">+ Add project</button>
+  </div>
+  <div id="rbErr" class="err" role="alert"></div>
+  <button id="rbPrint">Download PDF</button><div class="note">In the print window choose "Save as PDF". Turn off headers and footers for a clean page.</div>
+  <div id="rbPrev" class="classic"></div>
+</section>
+
 <section id="t-recruiter" class="card hide">
   <p class="note">Paste or upload several candidate resumes. InterviewPilot screens each against the role and job description above and ranks them with suggested phone-screen questions. Up to 10 candidates.</p>
   <div id="cands"></div><button id="btnAddCand" class="ghost">+ Add candidate</button>
@@ -170,7 +199,7 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['review','match','interview','nego','bank','code','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();profErr('')};
+  ['review','match','interview','nego','bank','code','builder','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();profErr('')};
 
 // ---- question bank
 let bankAll=[],bankFilter='all';
@@ -233,6 +262,53 @@ $('cpEval').onclick=()=>busy($('cpEval'),'Reviewing...',async()=>{
       (r.better_approach?`<h4>Better approach</h4><p>${esc(r.better_approach)}</p>`:'')+
       (r.style.length?'<h4>Style</h4>'+ul(r.style):'')+(r.next_step?`<div class="w g"><b>Next step</b><br>${esc(r.next_step)}</div>`:'')}
   catch(e){$('cpErr').textContent=e.message}});
+
+// ---- resume builder
+const RB_KEY='ip_resume_v1',RB_EMPTY=()=>({name:'',title:'',email:'',phone:'',location:'',links:[],summary:'',experience:[],education:[],skills:[],projects:[]});
+let RB=RB_EMPTY(),rbT=null;
+try{const d=JSON.parse(localStorage.getItem(RB_KEY)||'null');if(d&&typeof d==='object')RB=Object.assign(RB_EMPTY(),d)}catch(e){}
+const csv=v=>String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
+function rbSave(){clearTimeout(rbT);rbT=setTimeout(()=>{try{localStorage.setItem(RB_KEY,JSON.stringify(RB))}catch(e){}},400)}
+function rbPrevRender(){
+  const r=RB,h=[];const contact=[r.email,r.phone,r.location,...r.links].filter(Boolean).map(esc).join(' &middot; ');
+  h.push(`<div class="hd"><h1>${esc(r.name)||'Your Name'}</h1>${r.title?`<div>${esc(r.title)}</div>`:''}<div class="m">${contact}</div></div>`);
+  if(r.summary)h.push(`<h2>Summary</h2><div>${esc(r.summary)}</div>`);
+  if(r.experience.length)h.push('<h2>Experience</h2>'+r.experience.map(e=>`<div class="r"><span>${esc(e.role)}${e.company?', '+esc(e.company):''}</span><span class="m">${esc(e.dates)}</span></div>${ul(e.bullets)}`).join(''));
+  if(r.projects.length)h.push('<h2>Projects</h2>'+r.projects.map(p=>`<div><b>${esc(p.name)}</b> ${esc(p.details)}</div>`).join(''));
+  if(r.education.length)h.push('<h2>Education</h2>'+r.education.map(e=>`<div class="r"><span>${esc(e.degree)}${e.school?', '+esc(e.school):''}</span><span class="m">${esc(e.dates)}</span></div>`).join(''));
+  if(r.skills.length)h.push(`<h2>Skills</h2><div>${r.skills.map(esc).join(', ')}</div>`);
+  $('rbPrev').innerHTML=h.join('');rbSave();
+}
+function rbInp(cls,idx,key,label,val,area){return `<label>${label}</label>${area?`<textarea class="${cls}" data-i="${idx}" data-k="${key}" style="min-height:80px">${esc(val)}</textarea>`:`<input class="${cls}" data-i="${idx}" data-k="${key}" value="${esc(val)}" maxlength="200">`}`}
+function rbFormRender(){
+  for(const k of ['name','title','email','phone','location','summary'])$('rb_'+k).value=RB[k]||'';
+  $('rb_links').value=RB.links.join(', ');$('rb_skills').value=RB.skills.join(', ');
+  $('rbExp').innerHTML=RB.experience.map((e,i)=>`<div class="rbe">${rbInp('rx',i,'role','Role',e.role)}${rbInp('rx',i,'company','Company',e.company)}${rbInp('rx',i,'dates','Dates',e.dates)}${rbInp('rx',i,'bullets','Bullets (one per line)',(e.bullets||[]).join('\n'),true)}<button class="ghost" data-pol="${i}">Improve bullets with AI</button><button class="ghost" data-del="rx${i}">Remove</button></div>`).join('');
+  $('rbEdu').innerHTML=RB.education.map((e,i)=>`<div class="rbe">${rbInp('ed',i,'degree','Degree',e.degree)}${rbInp('ed',i,'school','School',e.school)}${rbInp('ed',i,'dates','Dates',e.dates)}<button class="ghost" data-del="ed${i}">Remove</button></div>`).join('');
+  $('rbPrj').innerHTML=RB.projects.map((e,i)=>`<div class="rbe">${rbInp('pj',i,'name','Name',e.name)}${rbInp('pj',i,'details','Details',e.details,true)}<button class="ghost" data-del="pj${i}">Remove</button></div>`).join('');
+  rbPrevRender();
+}
+for(const k of ['name','title','email','phone','location','summary'])$('rb_'+k).oninput=e=>{RB[k]=e.target.value;rbPrevRender()};
+$('rb_links').oninput=e=>{RB.links=csv(e.target.value);rbPrevRender()};$('rb_skills').oninput=e=>{RB.skills=csv(e.target.value);rbPrevRender()};
+$('rbForm').addEventListener('input',e=>{const t=e.target,i=+t.dataset.i,k=t.dataset.k;if(isNaN(i)||!k)return;
+  const arr=t.classList.contains('rx')?RB.experience:t.classList.contains('ed')?RB.education:t.classList.contains('pj')?RB.projects:null;if(!arr||!arr[i])return;
+  arr[i][k]=k==='bullets'?t.value.split('\n').map(x=>x.trim()).filter(Boolean):t.value;rbPrevRender()});
+$('rbAddExp').onclick=()=>{if(RB.experience.length<10){RB.experience.push({role:'',company:'',dates:'',bullets:[]});rbFormRender()}};
+$('rbAddEdu').onclick=()=>{if(RB.education.length<6){RB.education.push({degree:'',school:'',dates:''});rbFormRender()}};
+$('rbAddPrj').onclick=()=>{if(RB.projects.length<6){RB.projects.push({name:'',details:''});rbFormRender()}};
+$('rbForm').onclick=async e=>{const d=e.target.dataset||{};
+  if(d.del){const m=/^(rx|ed|pj)(\d+)$/.exec(d.del);if(m){({rx:RB.experience,ed:RB.education,pj:RB.projects})[m[1]].splice(+m[2],1);rbFormRender()}}
+  if(d.pol!==undefined){const i=+d.pol,ex=RB.experience[i];$('rbErr').textContent='';
+    await busy(e.target,'Improving...',async()=>{try{const r=await post('/api/builder/polish',{role:RB.title||$('role').value,bullets:ex.bullets,country:country||'US'});ex.bullets=r.bullets;rbFormRender()}catch(er){$('rbErr').textContent=er.message}})}};
+$('rbSum').onclick=()=>busy($('rbSum'),'Writing...',async()=>{$('rbErr').textContent='';
+  const facts=RB.experience.map(e=>`${e.role} at ${e.company}: ${(e.bullets||[]).join('; ')}`).join('\n')+'\nSkills: '+RB.skills.join(', ');
+  try{const r=await post('/api/builder/summary',{role:RB.title||$('role').value,facts,country:country||'US'});RB.summary=r.summary;rbFormRender()}catch(e){$('rbErr').textContent=e.message}});
+$('rbFill').onclick=()=>busy($('rbFill'),'Reading...',async()=>{$('rbErr').textContent='';
+  try{if(RB.experience.length&&!confirm('Replace what you have in the builder with your pasted resume?'))return;
+    RB=Object.assign(RB_EMPTY(),await post('/api/builder/parse',{resume:resumeText()}));rbFormRender()}catch(e){$('rbErr').textContent=e.message}});
+$('rbTpl').onchange=e=>{$('rbPrev').className=e.target.value};
+$('rbPrint').onclick=()=>{rbPrevRender();window.print()};
+rbFormRender();
 
 // ---- country
 function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}

@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import bank, coding, llm, services
+from app import bank, builder, coding, llm, services
 from app.guard import rate_limit
 
 app = FastAPI(title="InterviewPilot")
@@ -244,6 +244,33 @@ def coding_eval(pid: str, body: CodeIn):
 @app.post("/api/coding/problems/{pid}/hint", dependencies=LIMITED)
 def coding_hint(pid: str, body: HintIn):
     return _guard(coding.hint, pid, body.level, body.code)
+
+
+class PolishIn(BaseModel):
+    role: str = Field("", max_length=200)
+    bullets: list[str] = Field(max_length=builder.MAX_BULLETS)
+    country: str = "US"
+
+
+class SummaryIn(BaseModel):
+    role: str = Field("", max_length=200)
+    facts: str = Field(max_length=6000)
+    country: str = "US"
+
+
+@app.post("/api/builder/parse", dependencies=LIMITED)
+def builder_parse(body: DetectIn):
+    return builder.parse(_need_resume(body.resume))
+
+
+@app.post("/api/builder/polish", dependencies=LIMITED)
+def builder_polish(body: PolishIn):
+    return {"bullets": _guard(builder.polish, body.role, body.bullets, body.country)}
+
+
+@app.post("/api/builder/summary", dependencies=LIMITED)
+def builder_summary(body: SummaryIn):
+    return {"summary": _guard(builder.summary, body.role, body.facts, body.country)}
 
 
 @app.get("/sw.js")

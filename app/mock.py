@@ -49,6 +49,17 @@ def reply(task: str, user: str):
         }
     if task == "code_hint":
         return {"hint": "Think about what you can store while scanning once so you avoid a second loop."}
+    if task == "builder_parse":
+        return {"name": "Jane Doe", "title": "QA Engineer", "email": "jane@example.com", "phone": "", "location": "",
+                "links": [], "summary": "QA engineer with 5 years of experience.",
+                "experience": [{"role": "QA Engineer", "company": "Acme Corp", "dates": "2019 - Present",
+                                "bullets": ["Automated regression tests in Selenium and Java."]}],
+                "education": [], "skills": ["Selenium", "Java", "API testing"], "projects": []}
+    if task == "builder_polish":
+        lines = [l[2:] for l in user.splitlines() if l.startswith("- ")]
+        return {"bullets": ["Delivered: " + l for l in lines]}
+    if task == "builder_summary":
+        return {"summary": "Results-driven professional with hands-on experience in the listed tools, ready to contribute from day one."}
     if task == "questions":
         return {
             "questions": [

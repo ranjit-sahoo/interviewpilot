@@ -260,3 +260,21 @@ def test_coding_evaluate_sanitizes_model_output(monkeypatch):
 def test_coding_hint_levels():
     d = c.post("/api/coding/problems/two-sum/hint", json={"level": 9}).json()
     assert d["level"] == 3 and d["hint"]
+
+
+def test_builder_parse_polish_summary():
+    d = c.post("/api/builder/parse", json={"resume": RESUME}).json()
+    assert d["name"] and d["experience"][0]["bullets"] and isinstance(d["skills"], list)
+    assert c.post("/api/builder/parse", json={"resume": "hi"}).status_code == 400
+    b = c.post("/api/builder/polish", json={"role": "QA", "bullets": ["did testing", "wrote scripts"]}).json()["bullets"]
+    assert len(b) == 2
+    assert c.post("/api/builder/polish", json={"role": "QA", "bullets": ["", "  "]}).status_code == 400
+    s = c.post("/api/builder/summary", json={"role": "QA", "facts": "5 years Selenium Java API testing at Acme"}).json()
+    assert s["summary"]
+    assert c.post("/api/builder/summary", json={"role": "QA", "facts": "x"}).status_code == 400
+
+
+def test_builder_polish_misaligned_model_output_is_ignored(monkeypatch):
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: {"bullets": ["only one"]})
+    b = c.post("/api/builder/polish", json={"role": "QA", "bullets": ["a b", "c d"]}).json()["bullets"]
+    assert b == ["a b", "c d"]
