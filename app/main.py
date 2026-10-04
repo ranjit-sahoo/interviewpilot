@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import bank, llm, services
+from app import bank, coding, llm, services
 from app.guard import rate_limit
 
 app = FastAPI(title="InterviewPilot")
@@ -214,6 +214,36 @@ def question_bank(body: BankIn):
         except llm.LLMError:
             out["company_error"] = "Company-specific questions are unavailable right now. Showing the role bank."
     return out
+
+
+class CodeIn(BaseModel):
+    language: str = Field(max_length=20)
+    code: str = Field(max_length=coding.MAX_CODE + 1000)
+
+
+class HintIn(BaseModel):
+    level: int = 1
+    code: str = Field("", max_length=coding.MAX_CODE)
+
+
+@app.get("/api/coding/problems")
+def coding_list():
+    return {"problems": coding.listing()}
+
+
+@app.get("/api/coding/problems/{pid}")
+def coding_get(pid: str):
+    return _guard(coding.get, pid)
+
+
+@app.post("/api/coding/problems/{pid}/evaluate", dependencies=LIMITED)
+def coding_eval(pid: str, body: CodeIn):
+    return _guard(coding.evaluate, pid, body.language, body.code)
+
+
+@app.post("/api/coding/problems/{pid}/hint", dependencies=LIMITED)
+def coding_hint(pid: str, body: HintIn):
+    return _guard(coding.hint, pid, body.level, body.code)
 
 
 @app.get("/sw.js")

@@ -37,6 +37,18 @@ def reply(task: str, user: str):
                 {"type": "scenario", "level": "hard", "question": "A key deliverable is at risk the day before launch. What do you do?", "hint": "Assess, communicate early, give options."},
             ],
         }
+    if task == "code_eval":
+        return {
+            "verdict": "partially_correct", "score": 6,
+            "summary": "Offline sample review. The idea is reasonable but edge cases are not handled.",
+            "bugs": ["Empty input is not handled."],
+            "complexity": {"time": "O(n)", "space": "O(n)", "optimal": True, "note": "Sample only."},
+            "style": ["Use clearer variable names."],
+            "next_step": "Trace your code on an empty input and a single element.",
+            "better_approach": "",
+        }
+    if task == "code_hint":
+        return {"hint": "Think about what you can store while scanning once so you avoid a second loop."}
     if task == "questions":
         return {
             "questions": [

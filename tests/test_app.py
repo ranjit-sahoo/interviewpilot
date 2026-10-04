@@ -228,3 +228,35 @@ def test_bank_company_failure_degrades(monkeypatch):
 
 def test_bank_needs_input():
     assert c.post("/api/bank", json={}).status_code == 400
+
+
+def test_coding_problems_listing_and_detail():
+    ps = c.get("/api/coding/problems").json()["problems"]
+    assert len(ps) >= 10 and {"id", "title", "level", "topic"} <= set(ps[0])
+    d = c.get("/api/coding/problems/two-sum").json()
+    assert d["statement"] and "Python" in d["starters"] and "SQL" not in d["languages"]
+    assert c.get("/api/coding/problems/sql-second-highest").json()["languages"] == ["SQL"]
+    assert c.get("/api/coding/problems/nope").status_code == 404
+
+
+def test_coding_evaluate_ok_and_validation():
+    code = "def solve(nums, t):\n    seen = {}\n    for i, n in enumerate(nums):\n        if t - n in seen: return [seen[t-n], i]\n        seen[n] = i\n"
+    r = c.post("/api/coding/problems/two-sum/evaluate", json={"language": "Python", "code": code})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["verdict"] in ("correct", "partially_correct", "incorrect") and 1 <= d["score"] <= 10 and "time" in d["complexity"]
+    assert c.post("/api/coding/problems/two-sum/evaluate", json={"language": "SQL", "code": code}).status_code == 400
+    assert c.post("/api/coding/problems/two-sum/evaluate", json={"language": "Python", "code": "x"}).status_code == 400
+    assert c.post("/api/coding/problems/two-sum/evaluate", json={"language": "Python", "code": "x" * 13000}).status_code == 400
+    assert c.post("/api/coding/problems/zzz/evaluate", json={"language": "Python", "code": code}).status_code == 404
+
+
+def test_coding_evaluate_sanitizes_model_output(monkeypatch):
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: {"verdict": "weird", "score": 99, "bugs": "nope", "complexity": "O(n)"})
+    d = c.post("/api/coding/problems/two-sum/evaluate", json={"language": "Python", "code": "def solve(): pass"}).json()
+    assert d["verdict"] == "partially_correct" and d["score"] == 10 and d["bugs"] == [] and d["complexity"]["optimal"] is False
+
+
+def test_coding_hint_levels():
+    d = c.post("/api/coding/problems/two-sum/hint", json={"level": 9}).json()
+    assert d["level"] == 3 and d["hint"]

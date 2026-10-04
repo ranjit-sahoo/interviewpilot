@@ -73,7 +73,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 
 <div class="tabs" id="tabs" role="tablist">
   <button data-t="review" class="on">Resume Review</button><button data-t="match">JD Match</button>
-  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="recruiter">Recruiter Mode</button>
+  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="recruiter">Recruiter Mode</button>
 </div>
 
 <section id="t-review" class="card"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
@@ -124,6 +124,21 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <div id="bankCoOut"></div><div class="chips" id="bankFilter" role="group" aria-label="Filter"></div><div id="bankOut"></div>
 </section>
 
+<section id="t-code" class="card hide">
+  <div id="cpList"></div>
+  <div id="cpWork" class="hide">
+    <button id="cpBack" class="ghost">&larr; All problems</button>
+    <h3 id="cpTitle"></h3><div><span class="pill" id="cpLevel"></span><span class="pill" id="cpTopic"></span></div>
+    <p id="cpStmt"></p>
+    <label for="cpLang">Language</label><select id="cpLang"></select>
+    <label for="cpCode">Your solution</label>
+    <textarea id="cpCode" spellcheck="false" autocapitalize="off" autocomplete="off" style="font-family:ui-monospace,Menlo,Consolas,monospace;min-height:260px;tab-size:4;white-space:pre"></textarea>
+    <div class="note">Tab inserts spaces. Your code is reviewed by Nemotron, it is not run.</div>
+    <button id="cpEval">Evaluate my solution</button><button id="cpHint" class="ghost">Hint</button>
+    <div id="cpErr" class="err" role="alert"></div><div id="cpHints"></div><div id="cpOut"></div>
+  </div>
+</section>
+
 <section id="t-recruiter" class="card hide">
   <p class="note">Paste or upload several candidate resumes. InterviewPilot screens each against the role and job description above and ranks them with suggested phone-screen questions. Up to 10 candidates.</p>
   <div id="cands"></div><button id="btnAddCand" class="ghost">+ Add candidate</button>
@@ -155,7 +170,7 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['review','match','interview','nego','bank','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));profErr('')};
+  ['review','match','interview','nego','bank','code','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();profErr('')};
 
 // ---- question bank
 let bankAll=[],bankFilter='all';
@@ -181,6 +196,43 @@ $('btnBank').onclick=()=>busy($('btnBank'),'Loading...',async()=>{
     bankRender();
   }catch(e){$('bankErr').textContent=e.message}
 });
+
+// ---- coding practice
+let cpId=null,cpLevel=0,cpDrafts={};
+async function cpLoad(){
+  if($('cpList').dataset.ok)return;
+  try{const j=await api('/api/coding/problems');$('cpList').dataset.ok=1;
+    $('cpList').innerHTML='<p class="note">Pick a problem, write your solution, and get an AI review of correctness, edge cases and complexity.</p>'+
+      j.problems.map(p=>`<div class="cand"><span class="pill">${esc(p.level)}</span><span class="pill">${esc(p.topic)}</span><p><b>${esc(p.title)}</b></p><button class="alt" data-p="${esc(p.id)}">Practice</button></div>`).join('')}
+  catch(e){$('cpList').innerHTML=`<div class="err">${esc(e.message)}</div>`}
+}
+$('cpList').onclick=async e=>{const id=e.target.dataset&&e.target.dataset.p;if(!id)return;
+  try{const p=await api('/api/coding/problems/'+encodeURIComponent(id));cpId=id;cpLevel=0;
+    $('cpTitle').textContent=p.title;$('cpLevel').textContent=p.level;$('cpTopic').textContent=p.topic;$('cpStmt').textContent=p.statement;
+    $('cpLang').innerHTML=p.languages.map(l=>`<option>${l}</option>`).join('');$('cpLang').dataset.st=JSON.stringify(p.starters);
+    const d=cpDrafts[id];$('cpCode').value=d&&d.code||p.starters[p.languages[0]];if(d&&d.lang)$('cpLang').value=d.lang;
+    $('cpHints').innerHTML='';$('cpOut').innerHTML='';$('cpErr').textContent='';
+    $('cpList').classList.add('hide');$('cpWork').classList.remove('hide')}
+  catch(err){alert(err.message)}};
+$('cpBack').onclick=()=>{cpDrafts[cpId]={code:$('cpCode').value,lang:$('cpLang').value};$('cpWork').classList.add('hide');$('cpList').classList.remove('hide')};
+$('cpLang').onchange=()=>{const st=JSON.parse($('cpLang').dataset.st||'{}'),cur=$('cpCode').value.trim();
+  if(!cur||Object.values(st).some(v=>v.trim()===cur))$('cpCode').value=st[$('cpLang').value]||''};
+$('cpCode').onkeydown=e=>{if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();const t=e.target,a=t.selectionStart;t.setRangeText('    ',a,t.selectionEnd,'end')}};
+$('cpHint').onclick=()=>busy($('cpHint'),'Thinking...',async()=>{
+  $('cpErr').textContent='';cpLevel=Math.min(3,cpLevel+1);
+  try{const h=await post('/api/coding/problems/'+cpId+'/hint',{level:cpLevel,code:$('cpCode').value});
+    $('cpHints').insertAdjacentHTML('beforeend',`<div class="w g"><b>Hint ${h.level}</b><br>${esc(h.hint)}</div>`)}
+  catch(e){$('cpErr').textContent=e.message}});
+$('cpEval').onclick=()=>busy($('cpEval'),'Reviewing...',async()=>{
+  $('cpErr').textContent='';$('cpOut').innerHTML='';
+  try{const r=await post('/api/coding/problems/'+cpId+'/evaluate',{language:$('cpLang').value,code:$('cpCode').value});
+    const vt={correct:'Looks correct',partially_correct:'Partly correct',incorrect:'Needs work'}[r.verdict];
+    $('cpOut').innerHTML=`<div class="score">${r.score}/10</div><h3>${esc(vt)}</h3><p>${esc(r.summary)}</p>`+
+      (r.bugs.length?'<h4>Bugs and missed cases</h4>'+ul(r.bugs):'')+
+      `<h4>Complexity</h4><p>Time ${esc(r.complexity.time)}, space ${esc(r.complexity.space)}. ${r.complexity.optimal?'Optimal.':'Can be improved.'} ${esc(r.complexity.note)}</p>`+
+      (r.better_approach?`<h4>Better approach</h4><p>${esc(r.better_approach)}</p>`:'')+
+      (r.style.length?'<h4>Style</h4>'+ul(r.style):'')+(r.next_step?`<div class="w g"><b>Next step</b><br>${esc(r.next_step)}</div>`:'')}
+  catch(e){$('cpErr').textContent=e.message}});
 
 // ---- country
 function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}
