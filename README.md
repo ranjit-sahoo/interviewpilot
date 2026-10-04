@@ -90,8 +90,9 @@ Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited p
 Pricing rule (documentation only):
 - Rs 499 per year for visitors with an India IP address. $49 per year for every other country (US, UK, UAE, Canada and anywhere else).
 - The pricing country is never chosen by the user. IP geolocation alone sets the price shown.
-- The Rs 499 tier also requires an Indian-issued card at payment (for example Razorpay for INR). The card check only protects the India tier. Indians living abroad pay $49 (for example via Stripe).
-- A small amount of VPN leakage is acceptable at this scale.
+- The Rs 499 tier requires BOTH an India IP address AND an Indian-issued card at payment (for example Razorpay for INR).
+- The $49 tier has no card-country requirement. Indians living abroad, including those with Indian cards, pay $49 (for example via Stripe).
+- IP location is not a guarantee of physical location. This is an eligibility rule, not an anti-abuse guarantee; a small amount of VPN leakage is accepted at this scale.
 
 ## License
 MIT. See [LICENSE](LICENSE).
