@@ -5,4 +5,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 ENV INTERVIEWPILOT_DB=/tmp/interviewpilot.sqlite3
 EXPOSE 7860
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
