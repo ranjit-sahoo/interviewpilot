@@ -91,19 +91,37 @@ def _schema():
 
 
 # ---------- passwords ----------
+# OWASP-recommended scrypt setting (N=2^15, r=8, p=3). Hashes are stored with their parameters so they can be
+# upgraded later; the older N=2^14, p=1 format is still verified and silently re-hashed on the next login.
+_SCRYPT_SLOTS = threading.BoundedSemaphore(2)  # cap memory (about 32 MB per hash) on the small free instance
+
+
+def _scrypt(pw: str, salt: bytes, n: int, p: int) -> bytes:
+    with _SCRYPT_SLOTS:
+        return hashlib.scrypt(pw.encode(), salt=salt, n=n, r=8, p=p, dklen=32, maxmem=96 * 1024 * 1024)
+
+
 def hash_password(pw: str) -> str:
     salt = secrets.token_bytes(16)
-    h = hashlib.scrypt(pw.encode(), salt=salt, n=2**14, r=8, p=1, dklen=32)
-    return f"scrypt${salt.hex()}${h.hex()}"
+    return f"scrypt2${2**15}${3}${salt.hex()}${_scrypt(pw, salt, 2**15, 3).hex()}"
 
 
 def verify_password(pw: str, stored: str) -> bool:
     try:
-        _, salt, h = stored.split("$")
-        calc = hashlib.scrypt(pw.encode(), salt=bytes.fromhex(salt), n=2**14, r=8, p=1, dklen=32)
+        parts = stored.split("$")
+        if parts[0] == "scrypt2":
+            _, n, p, salt, h = parts
+            calc = _scrypt(pw, bytes.fromhex(salt), int(n), int(p))
+        else:
+            _, salt, h = parts
+            calc = _scrypt(pw, bytes.fromhex(salt), 2**14, 1)
         return hmac.compare_digest(calc.hex(), h)
     except Exception:
         return False
+
+
+def needs_rehash(stored: str) -> bool:
+    return not stored.startswith("scrypt2$")
 
 
 _DUMMY = hash_password("not-a-real-password")  # equalizes timing for unknown emails
@@ -152,6 +170,8 @@ def login(email: str, password: str):
         ok = verify_password(password or "", rows[0]["pw_hash"] if rows else _DUMMY)
         if not rows or not ok:
             raise PermissionError("Wrong email or password.")
+        if needs_rehash(rows[0]["pw_hash"]):
+            c.run("UPDATE users SET pw_hash=? WHERE id=?", (hash_password(password), rows[0]["id"]))
         return {"id": rows[0]["id"], "email": email}, _new_session(c, rows[0]["id"])
 
 

@@ -79,6 +79,11 @@ async def unhandled(_: Request, exc: Exception):
 
 @app.exception_handler(llm.LLMError)
 async def llm_error(_: Request, exc: llm.LLMError):
+    if "budget" in str(exc):
+        return JSONResponse(
+            {"detail": "Today's free AI capacity has been used up. The question bank, coding practice and resume builder still work. Please try again tomorrow."},
+            status_code=503,
+        )
     return JSONResponse({"detail": "The AI service is busy or unavailable. Please try again in a moment."}, status_code=502)
 
 
@@ -136,7 +141,11 @@ def _read_upload(file: UploadFile) -> str:
             from pypdf import PdfReader
 
             reader = PdfReader(io.BytesIO(raw))
+            if len(reader.pages) > 30:
+                raise HTTPException(413, "This PDF has too many pages (30 max).")
             return "\n".join((p.extract_text() or "") for p in reader.pages)
+        except HTTPException:
+            raise
         except Exception:
             raise HTTPException(400, "Could not read this PDF. Try a text-based PDF or paste the text.")
     return raw.decode("utf-8", errors="ignore")

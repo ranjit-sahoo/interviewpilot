@@ -60,6 +60,12 @@ def _client():
 
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
     _budget()
+    from app import spend
+
+    try:
+        spend.check()
+    except spend.BudgetExceeded as e:
+        raise LLMError("budget") from e
     kw.setdefault("max_tokens", int(os.environ.get("LLM_MAX_TOKENS", "8000")))
     if model == FAST_MODEL and os.environ.get("FAST_THINKING") != "1":
         # Nano can spend 30+ seconds "thinking" before a short JSON answer. Turning it off is about 20x faster.
@@ -77,7 +83,14 @@ def chat(messages, model: str = FAST_MODEL, **kw) -> str:
                 raise LLMError(f"model call failed: {type(e2).__name__}") from e2
         else:
             raise LLMError(f"model call failed: {type(e).__name__}") from e
-    return resp.choices[0].message.content or ""
+    out = resp.choices[0].message.content or ""
+    try:
+        u = resp.usage
+        tin, tout = (u.prompt_tokens or 0), (u.completion_tokens or 0)
+    except Exception:  # no usage reported: assume a generous size so the guard still counts
+        tin, tout = sum(len(m["content"]) for m in messages) // 3, max(len(out) // 3, 1500)
+    spend.record(spend.cost(model == STRONG_MODEL, tin, tout))
+    return out
 
 
 def extract_json(text: str):

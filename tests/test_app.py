@@ -490,3 +490,30 @@ def test_idor_history_and_unhandled_error():
     assert b.delete(f"/api/history/{iid}").status_code == 404
     assert a.get(f"/api/history/{iid}").status_code == 200
     assert TestClient(app).get(f"/api/history/{iid}").status_code == 401
+
+
+def test_spend_guard_blocks_when_budget_used(monkeypatch):
+    import pytest
+
+    from app import llm, spend
+
+    spend._cache.update(t=0.0)
+    s0 = spend.status()["total_usd"]
+    spend.record(1.25)
+    assert spend.status()["total_usd"] >= s0 + 1.25
+    monkeypatch.setattr(spend, "TOTAL_CAP", s0 + 1.0)
+    spend._cache.update(t=0.0)
+    with pytest.raises(spend.BudgetExceeded):
+        spend.check()
+    assert spend.cost(True, 1000, 1000) > 0
+
+
+def test_budget_exhausted_returns_503(monkeypatch):
+    from app import llm
+
+    def boom(*a, **k):
+        raise llm.LLMError("budget")
+
+    monkeypatch.setattr("app.prep.build", boom)
+    r = c.post("/api/prep", json={"resume": "x" * 60, "role": "QA Engineer", "country": "US"})
+    assert r.status_code == 503 and "capacity" in r.json()["detail"]

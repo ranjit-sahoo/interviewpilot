@@ -93,3 +93,16 @@ def test_auth_rate_limit(monkeypatch):
     c = fresh()
     codes = [c.post("/api/auth/login", json={"email": "x@example.com", "password": "nope"}).status_code for _ in range(4)]
     assert codes[:2] == [401, 401] and 429 in codes[2:]
+
+
+def test_password_hash_upgrade():
+    import hashlib
+
+    from app import accounts
+
+    salt = b"0123456789abcdef"
+    old = f"scrypt${salt.hex()}${hashlib.scrypt(b'oldpass123', salt=salt, n=2**14, r=8, p=1, dklen=32).hex()}"
+    assert accounts.verify_password("oldpass123", old) and not accounts.verify_password("nope", old)
+    assert accounts.needs_rehash(old)
+    new = accounts.hash_password("newpass123")
+    assert new.startswith("scrypt2$") and accounts.verify_password("newpass123", new) and not accounts.needs_rehash(new)
