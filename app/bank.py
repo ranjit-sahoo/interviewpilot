@@ -6,6 +6,7 @@ Nemotron model, cached in memory, and fall back to the curated set if the model 
 import threading
 
 from app import llm, market
+from app import bank_us
 
 # (type, level, question, how to answer)
 _B = {
@@ -119,6 +120,8 @@ _B = {
     ],
 }
 
+_B.update(bank_us.ROLES)
+
 GENERAL = [
     ("behavioral", "easy", "Tell me about yourself.", "Present, past, future in about 90 seconds, tied to this role."),
     ("behavioral", "easy", "Why do you want this role and this company?", "Two specific reasons about the work, not only salary."),
@@ -135,11 +138,13 @@ _ALIASES = {
     "Python Developer": ["python", "django", "flask", "fastapi"],
     "Business Analyst": ["business analyst", "ba ", "product owner", "requirements", "systems analyst"],
     "Data Analyst": ["data analyst", "analytics", "bi ", "power bi", "tableau", "reporting"],
-    "DevOps Engineer": ["devops", "sre", "cloud", "kubernetes", "infrastructure", "platform engineer"],
+    "DevOps Engineer": ["devops", "sre", "kubernetes", "infrastructure", "platform engineer"],
     "Frontend Developer": ["frontend", "front-end", "front end", "react", "angular", "ui developer", "javascript", "web developer"],
     "Project Manager": ["project manager", "program manager", "scrum", "delivery manager", "pmo"],
     "Data Engineer": ["data engineer", "etl", "spark", "big data", "pipeline", "warehouse"],
 }
+
+_ALIASES.update(bank_us.ALIASES)
 
 
 def roles() -> list[str]:

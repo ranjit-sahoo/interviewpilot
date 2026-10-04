@@ -330,3 +330,15 @@ def test_known_company_is_instant_unless_ai_requested(monkeypatch):
     monkeypatch.setattr(llm, "chat_json", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no AI call expected")))
     d = c.post("/api/bank", json={"role": "QA", "company": "Google"}).json()
     assert d["profile"]["name"] == "Google" and d["company"] is None
+
+
+def test_us_market_roles_and_matching():
+    from app import bank
+    rs = bank.roles()
+    for r in ["Salesforce Developer", "ServiceNow Developer", ".NET Developer", "AWS Cloud Engineer", "Cybersecurity Analyst", "Scrum Master"]:
+        assert r in rs
+    assert "US IT Recruiter" not in rs
+    assert bank.match_role("senior dotnet core dev") == ".NET Developer"
+    assert bank.match_role("cloud engineer") == "AWS Cloud Engineer"
+    for r in rs:
+        assert len(bank.curated(r)["questions"]) >= 15
