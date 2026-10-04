@@ -44,12 +44,19 @@ def reply(task: str, user: str):
             "feedback": "You gave a correct answer but stayed general. Add one concrete example with numbers.",
             "stronger_answer": "In my last project I owned the regression suite for a payments app. I automated 80 critical flows in Selenium, which cut release testing from 3 days to 1 and caught 12 defects before production.",
             "tips": ["Lead with the result, then explain how.", "Use 'I' not 'we' so the interviewer hears your contribution."],
+            "communication": {
+                "fluency": 4,
+                "tone": "calm and professional",
+                "language_notes": ["Say 'I automated' instead of 'I have done automation'."],
+                "tip": "Pause for a second before the result so the client hears the key number.",
+            },
             "followup": "What was the hardest part of that, and what would you do differently now?",
         }
     if task == "report":
         return {
             "overall_score": 3.4,
             "summary": "Good technical base. Answers need more concrete examples, numbers and STAR structure.",
+            "communication_summary": "Clear and calm. Reduce filler words and lead with the result.",
             "strengths": ["Correct technical understanding", "Calm, professional tone"],
             "gaps": ["Few measurable results", "Behavioral answers lack a clear Situation/Result"],
             "plan_7_days": [
@@ -61,5 +68,58 @@ def reply(task: str, user: str):
                 {"day": 6, "task": "Redo the weakest 3 answers from this session."},
                 {"day": 7, "task": "Full mock interview again and compare scores."},
             ],
+        }
+    return reply_extra(task, user)
+
+
+def reply_extra(task: str, user: str):
+    if task == "detect":
+        return None
+    if task == "match":
+        return {
+            "match_score": 62,
+            "verdict": "Decent overlap, but several required tools are missing from the resume text.",
+            "matched_keywords": ["Java", "Selenium", "API testing"],
+            "missing_keywords": ["CI/CD", "Docker", "Postman"],
+            "gaps": [{"gap": "No CI/CD keywords", "fix": "If you have used Jenkins or GitHub Actions, add it to a project bullet."}],
+            "tailored_bullets": [{"before": "Worked on testing", "after": "Built Selenium regression suites for API and UI testing"}],
+        }
+    if task == "nego_start":
+        return {
+            "market_range": "$95,000-$115,000 per year (estimate)",
+            "offer": "$98,000 per year",
+            "opening_message": "We would like to offer you the role at $98,000 a year. How does that sound to you?",
+            "goal": "Reach the upper half of the range with a clear, polite justification.",
+        }
+    if task == "nego_turn":
+        return {
+            "recruiter_reply": "I hear you. I can move to $103,000, but that is near the top of what I can approve.",
+            "current_offer": "$103,000 per year",
+            "coach": {
+                "what_worked": "You stayed polite and named a number.",
+                "what_to_improve": "Tie your ask to specific impact from past work.",
+                "better_line": "Based on the results I delivered and the market range, I was hoping for $108,000.",
+            },
+            "deal_closed": False,
+        }
+    if task == "nego_report":
+        return {
+            "outcome": "Offer improved during the session.",
+            "score": 3.5,
+            "strengths": ["Polite tone", "Asked for a higher number"],
+            "mistakes": ["Did not cite market data", "Accepted the first counter quickly"],
+            "script": ["I am excited about the role. Based on my experience and market data, I was targeting a higher figure."],
+            "next_steps": ["Research three salary sources", "Write down your walk-away number"],
+        }
+    if task == "recruiter":
+        n = len(user)
+        score = 45 + n % 45
+        return {
+            "score": score,
+            "recommendation": "advance" if score >= 70 else "maybe" if score >= 55 else "reject",
+            "summary": "Relevant background with some gaps against the job description.",
+            "strengths": ["Relevant technical stack"],
+            "risks": ["Few measurable results", "Unclear recent tenure"],
+            "screening_questions": ["Walk me through your most recent project.", "What is your notice period or availability?", "What are your compensation expectations?"],
         }
     raise KeyError(task)

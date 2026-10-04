@@ -10,11 +10,20 @@ UI and tests work offline. The mock is never used when a key is present.
 import json
 import os
 import re
+import threading
 
 BASE_URL = os.environ.get("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/")
 # Confirm exact IDs in the Token Factory model catalog and override via env.
 FAST_MODEL = os.environ.get("FAST_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
 STRONG_MODEL = os.environ.get("STRONG_MODEL", "nvidia/Nemotron-3-Ultra-550b-a55b")
+
+
+class LLMError(RuntimeError):
+    """The model service failed or returned unusable output."""
+
+
+# Cap simultaneous model calls so many users cannot exhaust the API rate limit.
+_SLOTS = threading.BoundedSemaphore(int(os.environ.get("LLM_CONCURRENCY", "8")))
 
 
 def mock_mode() -> bool:
@@ -24,11 +33,15 @@ def mock_mode() -> bool:
 def _client():
     from openai import OpenAI
 
-    return OpenAI(base_url=BASE_URL, api_key=os.environ["NEBIUS_API_KEY"])
+    return OpenAI(base_url=BASE_URL, api_key=os.environ["NEBIUS_API_KEY"], timeout=90, max_retries=2)
 
 
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
-    resp = _client().chat.completions.create(model=model, messages=messages, **kw)
+    try:
+        with _SLOTS:
+            resp = _client().chat.completions.create(model=model, messages=messages, **kw)
+    except Exception as e:  # network, auth, rate limit, timeout
+        raise LLMError(f"model call failed: {type(e).__name__}") from e
     return resp.choices[0].message.content or ""
 
 
@@ -55,6 +68,6 @@ def chat_json(task: str, system: str, user: str, model: str = FAST_MODEL):
         )
         try:
             return extract_json(out)
-        except ValueError:
+        except (ValueError, json.JSONDecodeError):
             user += "\n\nReturn ONLY one valid JSON object, nothing else."
-    raise RuntimeError("model did not return valid JSON")
+    raise LLMError("model did not return valid JSON")
