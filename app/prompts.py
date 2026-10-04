@@ -8,9 +8,10 @@ Return ONLY JSON:
 Give 4-8 weaknesses ordered by importance. Check: impact/numbers, summary, ATS keywords for the role,
 skills organisation, gaps or inconsistencies, formatting problems, and conventions of the target market."""
 
-DETECT_SYSTEM = """From the resume and optional job description decide which job market the candidate is in:
-"US" (based in or targeting the United States), "India" (based in or targeting India), or "Other".
-Use location, phone code, employers, education, visa/work-authorization, currency, notice period/CTC vs H1B/OPT hints.
+DETECT_SYSTEM = """Decide which job market the CANDIDATE belongs to, from the resume and optional job description:
+"US" (the candidate lives in or is authorized to work in the United States), "India" (the candidate lives in India),
+or "Other". Judge the candidate, not the client: an India-based person working for a US client is still "India".
+Use location, phone code, current employer, education, visa/work-authorization (H1B/OPT/GC), currency, notice period/CTC.
 Return ONLY JSON: {"country": "US|India|Other", "confidence": "high|medium|low", "reason": str (one short sentence)}"""
 
 QUESTIONS_SYSTEM = """You are a hiring manager preparing a mock interview. {market}
