@@ -13,8 +13,8 @@ import re
 
 BASE_URL = os.environ.get("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/")
 # Confirm exact IDs in the Token Factory model catalog and override via env.
-FAST_MODEL = os.environ.get("FAST_MODEL", "nvidia/Llama-3_1-Nemotron-Nano-8B-v1")
-STRONG_MODEL = os.environ.get("STRONG_MODEL", "nvidia/Llama-3_1-Nemotron-Ultra-253B-v1")
+FAST_MODEL = os.environ.get("FAST_MODEL", "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B")
+STRONG_MODEL = os.environ.get("STRONG_MODEL", "nvidia/Nemotron-3-Ultra-550b-a55b")
 
 
 def mock_mode() -> bool:
