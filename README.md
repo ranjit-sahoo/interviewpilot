@@ -87,5 +87,10 @@ InterviewPilot is built for educated professionals in India and the US. The live
 
 Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs, priced by the user's country: Rs 499 per year for India and $49 per year for the US. Not built yet; no payment code exists in this repository.
 
+Anti-abuse plan for pricing (documentation only, not built): the pricing country is never chosen by the user.
+1. The price shown is decided automatically from the visitor's IP geolocation.
+2. At payment time the card issuing country must match the price tier: the India tier needs an Indian-issued card (for example Razorpay for INR), the US tier is charged in USD (for example Stripe).
+3. A small amount of VPN leakage is acceptable at this scale; the card check closes the main loophole.
+
 ## License
 MIT. See [LICENSE](LICENSE).
