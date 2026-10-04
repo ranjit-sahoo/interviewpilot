@@ -62,11 +62,16 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 #rbPrev.compact{font-family:system-ui,Arial,sans-serif;font-size:12px;line-height:1.35;padding:20px 24px}#rbPrev.compact h1{font-size:20px}
 .rbe{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
 @media print{body *{visibility:hidden}#rbPrev,#rbPrev *{visibility:visible}#rbPrev{position:absolute;left:0;top:0;width:100%;margin:0;border-radius:0;padding:0.4in}@page{margin:0.4in}}
+.star4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.star4 div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card2)}
+.star4 b{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;margin-right:8px}
+.starOut .blk{border-left:3px solid #5b8cff;padding:8px 14px;margin:10px 0;background:var(--card2);border-radius:0 12px 12px 0}
+.say{white-space:pre-wrap;line-height:1.6}.shareRow button,.shareRow a{margin:6px 8px 0 0}
+@media(max-width:640px){.star4{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
-<div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
+<div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
 <div id="mock" class="pill hide">demo mode (offline sample answers)</div>
 
 <div class="card" id="acct"><span id="acctInfo" class="note">Guest mode: everything works without an account. Log in only if you want to save your work.</span>
@@ -88,7 +93,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 
 <div class="tabs" id="tabs" role="tablist">
   <button data-t="prep" class="on">Interview Prep</button><button data-t="review">Resume Review</button><button data-t="match">JD Match</button>
-  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
+  <button data-t="interview">Mock Interview</button><button data-t="star">STAR Builder</button><button data-t="brief">Company Brief</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
 </div>
 
 <section id="t-prep" class="card"><p class="note">Your resume, your job description, your market. Get the questions you are most likely to face, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
@@ -99,7 +104,10 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 <section id="t-match" class="card hide"><button id="btnMatch">Compare resume with job description</button><div id="matchOut"></div></section>
 
 <section id="t-interview" class="card hide">
-  <div id="ivSetup"><button id="btnStart" class="alt">Start mock interview</button>
+  <div id="ivSetup"><label for="ivLevel">Difficulty</label>
+    <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
+    <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
+    <button id="btnStart" class="alt">Start mock interview</button>
     <span class="toggle" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
     <div class="note" id="voiceNote"></div>
     <div id="voiceOpts" class="hide">
@@ -121,6 +129,23 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   </div>
   <div id="report" class="hide"></div>
 </section>
+
+<section id="t-star" class="card hide">
+  <p class="note">Behavioral questions ("tell me about a time...") are answered best in STAR format. Write your real experience roughly, in any words. We turn it into an answer you can speak. We never invent facts: gaps are marked for you to fill.</p>
+  <div class="star4"><div><b>S</b>Situation: the scene, in 1-2 sentences</div><div><b>T</b>Task: what was your responsibility</div><div><b>A</b>Action: what YOU did, step by step</div><div><b>R</b>Result: the outcome, with a number if you can</div></div>
+  <label for="stQ">Interview question (optional)</label><input type="text" id="stQ" maxlength="300" list="stQs" placeholder="e.g. Tell me about a conflict with a teammate">
+  <datalist id="stQs"><option value="Tell me about a conflict with a teammate"><option value="Tell me about a time you failed"><option value="Tell me about a time you worked under a tight deadline"><option value="Tell me about a time you led or took ownership"><option value="Tell me about your biggest achievement"><option value="Tell me about a time you disagreed with your manager"></datalist>
+  <label for="stExp">Your real experience, rough notes are fine</label>
+  <textarea id="stExp" maxlength="6000" placeholder="e.g. In my last project two teammates kept fighting about who tests what. I sat with both, made a plan, and we released on time..."></textarea>
+  <button id="btnStar" class="alt">Build my STAR answer</button><div id="starErr" class="err" role="alert"></div><div id="starOut" class="starOut"></div></section>
+
+<section id="t-brief" class="card hide">
+  <p class="note">Enter the company you are interviewing with. You get a one-page brief: what they do, how they hire in your country, the rounds, the question style, and a smart "why us" angle.</p>
+  <label for="bfCo">Company</label><input type="text" id="bfCo" maxlength="80" list="bfList" placeholder="e.g. Infosys, Amazon, a startup name">
+  <datalist id="bfList"></datalist>
+  <label for="bfRole">Role (optional, uses the Target role above if empty)</label><input type="text" id="bfRole" maxlength="200">
+  <div class="note" id="bfCountry"></div>
+  <button id="btnBrief" class="alt">Get the company brief</button><div id="briefErr" class="err" role="alert"></div><div id="briefOut"></div></section>
 
 <section id="t-nego" class="card hide">
   <label for="curpay">Current or expected pay (optional)</label><input type="text" id="curpay" maxlength="200" placeholder="e.g. 14 LPA or $90k">
@@ -193,7 +218,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ul=a=>(a&&a.length)?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'';
-let country=null,countryTouched=false,detKey='',sid=null,nsid=null,voice=false;
+let fuOn=true,country=null,countryTouched=false,detKey='',sid=null,nsid=null,voice=false;
 fetch('/health').then(r=>r.json()).then(h=>{if(h.mock_mode)$('mock').classList.remove('hide')}).catch(()=>{});
 
 async function api(url,opts){
@@ -211,7 +236,7 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['prep','review','match','interview','nego','bank','code','builder','recruiter','history'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();if(t==='history'&&typeof histLoad==='function')histLoad();profErr('')};
+  ['prep','review','match','interview','star','brief','nego','bank','code','builder','recruiter','history'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();if(t==='history'&&typeof histLoad==='function')histLoad();profErr('')};
 
 // ---- question bank
 let bankAll=[],bankFilter='all';
@@ -369,6 +394,8 @@ async function saveItem(kind,title,data,btn){
 document.body.addEventListener('click',e=>{const k=e.target.dataset&&e.target.dataset.save;if(!k)return;
   if(k==='prep'&&lastPrep)saveItem('prep',`Prep pack: ${lastPrep.role}`,lastPrep,e.target);
   if(k==='code'&&lastReview)saveItem('code_review',`Code review: ${lastReview.title}`,lastReview,e.target);
+  if(k==='star'&&lastStar)saveItem('star',`STAR: ${(lastStar.question||'answer').slice(0,60)}`,lastStar,e.target);
+  if(k==='brief'&&lastBrief)saveItem('brief',`Brief: ${lastBrief.company}`,lastBrief,e.target);
   if(k==='resume')saveItem('resume',`Resume: ${RB.name||RB.title||'draft'}`,RB,e.target)});
 const fmt=t=>new Date(t*1000).toLocaleDateString();
 async function histLoad(){
@@ -381,6 +408,8 @@ $('histList').onclick=async e=>{const d=e.target.dataset||{};
   if(d.open){try{const it=await api('/api/history/'+d.open),x=it.data;
     if(it.kind==='prep'){document.querySelector('[data-t=prep]').click();lastPrep=x;showPrep(x.pack,x.coding,x.jd,true)}
     else if(it.kind==='resume'){RB=Object.assign(RB_EMPTY(),x);rbFormRender();document.querySelector('[data-t=builder]').click()}
+    else if(it.kind==='star'){$('histView').innerHTML='<div class="starOut">'+starHtml(x)+'</div>';starBind(x)}
+    else if(it.kind==='brief'){$('histView').innerHTML=briefHtml(x)}
     else if(it.kind==='code_review'){$('histView').innerHTML=`<h3>${esc(it.title)}</h3><div class="score">${x.result.score}/10</div><p>${esc(x.result.summary)}</p>`+(x.result.bugs.length?ul(x.result.bugs):'')+`<pre style="white-space:pre-wrap;background:var(--card2);padding:10px;border-radius:10px">${esc(x.code)}</pre>`}
     else $('histView').innerHTML=`<pre style="white-space:pre-wrap">${esc(JSON.stringify(x,null,2))}</pre>`}catch(er){alert(er.message)}}};
 $('histDel').onclick=async()=>{if(!confirm('Delete your account and everything saved? This cannot be undone.'))return;
@@ -464,10 +493,10 @@ $('btnSpeak').onclick=()=>speak($('qtext').textContent);
 
 // ---- interview
 $('btnStart').onclick=()=>busy($('btnStart'),'Preparing questions...',async()=>{profErr('');
-  try{const d=await post('/api/session',{resume:resumeText(),role:role(),jd:$('jd').value,country:await ensureCountry()});
-    sid=d.session_id;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
+  try{const d=await post('/api/session',{resume:resumeText(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked});
+    sid=d.session_id;fuOn=$('ivFu').checked;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
   }catch(e){profErr(e.message)}});
-function showQ(q,n,t){if(!voice)$('fb').innerHTML='';$('qnum').textContent=`Question ${n} of ${t}`;$('qtype').textContent=q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
+function showQ(q,n,t,fu){if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
   $('interview').scrollIntoView({behavior:'smooth',block:'start'});speak(q.question,()=>{if(voice&&!listening)startMic()})}
 $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textContent='';
   const text=$('ans').value.trim();if(!text){$('ansErr').textContent='Give an answer first.';return}
@@ -478,9 +507,12 @@ $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textCont
       <p>${esc(f.feedback)}</p><div class="w g"><b>A stronger answer</b><br>${esc(f.stronger_answer)}</div>${ul(f.tips)}
       <h3>Communication</h3><p><span class="pill">Fluency ${esc(cm.fluency)}/5</span><span class="pill">${esc(cm.tone)}</span><span class="pill">${esc(m.word_count)} words</span><span class="pill">${esc(m.filler_total||0)} filler words</span></p>
       ${fl?`<p class="note">Fillers: ${fl}</p>`:''}${m.too_short?'<p class="note">Answer was short. Aim for 60-90 seconds with an example.</p>':''}${ul(cm.language_notes)}${cm.tip?`<p><b>Tip:</b> ${esc(cm.tip)}</p>`:''}
-      ${f.followup?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}<div id="nextArea"></div>`;
+      ${(!fuOn&&f.followup)?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}${d.difficulty?`<p class="pill">Interviewer made the next question ${d.difficulty==='harder'?'harder: you answered strongly':'a little easier: let us build up'}</p>`:''}<div id="nextArea"></div>`;
     $('busy').classList.add('hide');
     if(d.finished){$('btnAns').disabled=true;$('nextArea').innerHTML='<button id="btnRep">See my session report</button>';$('btnRep').onclick=loadReport}
+    else if(d.followup){$('nextArea').innerHTML='<p class="note">The interviewer wants to dig deeper into your answer.</p><button id="btnNext">Answer the follow-up</button>';let went=false;
+      const go=()=>{if(went)return;went=true;showQ(d.followup,d.number,d.total,d.followup)};
+      $('btnNext').onclick=()=>{if(TTS)TTS.cancel();go()};if(voice)go()}
     else{$('nextArea').innerHTML='<button id="btnNext">Next question</button>';let went=false;
       const go=()=>{if(went)return;went=true;showQ(d.next_question,d.number,d.total)};
       $('btnNext').onclick=()=>{if(TTS)TTS.cancel();go()};
@@ -492,7 +524,41 @@ async function loadReport(){$('ansErr').textContent='';
    ${r.communication_summary?`<h3>Communication</h3><p>${esc(r.communication_summary)}</p>`:''}
    <h3>Strengths</h3>${ul(r.strengths)}<h3>Gaps</h3>${ul(r.gaps)}
    <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol>`;
+  el.insertAdjacentHTML('beforeend',`<h3>Share your result</h3><p class="note">Create a clean score card for LinkedIn or WhatsApp. It shows only your score, role and strengths, never your resume.</p>
+   <input type="text" id="cardName" maxlength="40" placeholder="Your name on the card (optional)"><button id="btnCard" class="alt">Create share card</button><div id="cardOut"></div>`);
+  $('btnCard').onclick=()=>busy($('btnCard'),'Designing your card...',async()=>{
+    try{const c=await post(`/api/session/${sid}/card`,{name:$('cardName').value});const t=encodeURIComponent(`I scored ${c.score}/5 in an AI mock interview on InterviewPilot (${c.verdict}). Try yours free: `);
+      $('cardOut').innerHTML=`<img src="${esc(c.image)}" alt="Your score card" style="max-width:100%;border-radius:14px;margin-top:12px"><div class="shareRow">
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(c.url)}" target="_blank" rel="noopener"><button type="button">Share on LinkedIn</button></a>
+        <a href="https://wa.me/?text=${t}${encodeURIComponent(c.url)}" target="_blank" rel="noopener"><button type="button" class="alt">Share on WhatsApp</button></a>
+        <button type="button" class="ghost" id="cardCopy">Copy link</button><a href="${esc(c.image)}" download="interviewpilot-score.png"><button type="button" class="ghost">Download image</button></a></div>`;
+      $('cardCopy').onclick=async e=>{try{await navigator.clipboard.writeText(c.url);e.target.textContent='Copied'}catch(_){prompt('Copy this link',c.url)}}}
+    catch(e){$('ansErr').textContent=e.message}});
   el.scrollIntoView({behavior:'smooth'})}catch(e){$('ansErr').textContent=e.message}}
+
+// ---- STAR builder
+let lastStar=null,lastBrief=null;
+const starHtml=d=>`<h3>Your STAR answer</h3>${d.opener?`<p class="note">Start with: <i>${esc(d.opener)}</i></p>`:''}
+  ${[['Situation',d.situation],['Task',d.task],['Action',d.action],['Result',d.result]].map(([k,v])=>`<div class="blk"><b>${k}</b><br>${esc(v)}</div>`).join('')}
+  <h3>Say it like this</h3><div class="w g say">${esc(d.spoken_answer)}</div><button class="ghost" id="stCopy">Copy answer</button>
+  ${d.missing&&d.missing.length?`<h3>Make it stronger: add these</h3>${ul(d.missing)}`:''}${d.tips&&d.tips.length?`<h3>Delivery tips</h3>${ul(d.tips)}`:''}
+  <p><button class="ghost" data-save="star">Save to my history</button></p>`;
+function starBind(d){const b=$('stCopy');if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(d.spoken_answer);b.textContent='Copied'}catch(e){}}}
+$('btnStar').onclick=()=>busy($('btnStar'),'Building your answer...',async()=>{$('starErr').textContent='';
+  try{const d=await post('/api/star',{experience:$('stExp').value,question:$('stQ').value,role:$('role').value,country:country||'US'});
+    lastStar=Object.assign({question:$('stQ').value},d);$('starOut').innerHTML=starHtml(d);starBind(d)}catch(e){$('starErr').textContent=e.message}});
+// ---- company brief
+const bfCountry=()=>{$('bfCountry').textContent=`Adapted to: ${country||'US'} (change the Country chips at the top of the page)`};
+document.querySelector('[data-t=brief]').addEventListener('click',()=>{bfCountry();if(!$('bfRole').value)$('bfRole').value=$('role').value});
+fetch('/api/companies').then(r=>r.json()).then(j=>{$('bfList').innerHTML=j.companies.map(c=>`<option value="${esc(c)}">`).join('')}).catch(()=>{});
+const sec=(t,h)=>h?`<div class="cand"><b>${t}</b>${h}</div>`:'';
+const briefHtml=d=>`<h2>${esc(d.company)} <span class="pill">${esc(d.country)} view</span></h2><p>${esc(d.summary)}</p>${d.market_note?`<p class="note">${esc(d.market_note)}</p>`:''}
+  ${sec('Interview process',d.process.length?'<ol>'+d.process.map(x=>`<li>${esc(x)}</li>`).join('')+'</ol>':'')}${sec('What they ask',ul(d.question_style))}
+  ${sec('Culture',ul(d.culture))}${sec('Recent focus areas',ul(d.recent_focus))}
+  ${d.why_join?`<div class="w g"><b>Your "why this company" angle</b><br>${esc(d.why_join)}</div>`:''}${sec('Smart questions to ask them',ul(d.ask_them))}${sec('Avoid these mistakes',ul(d.watch_out))}
+  <p class="note">${esc(d.caution)} <a href="${esc(d.news_url)}" target="_blank" rel="noopener">See the latest news</a></p><p><button class="ghost" data-save="brief">Save to my history</button></p>`;
+$('btnBrief').onclick=()=>busy($('btnBrief'),'Researching...',async()=>{$('briefErr').textContent='';
+  try{const d=await post('/api/company-brief',{company:$('bfCo').value,role:$('bfRole').value||$('role').value,country:country||'US'});lastBrief=d;$('briefOut').innerHTML=briefHtml(d)}catch(e){$('briefErr').textContent=e.message}});
 
 // ---- negotiation
 function bubble(who,t){const d=document.createElement('div');d.className='bubble '+(who==='recruiter'?'r':'c');d.innerHTML=`<small class="note">${who==='recruiter'?'Recruiter':'You'}</small><br>${esc(t)}`;$('chat').appendChild(d);d.scrollIntoView({behavior:'smooth',block:'nearest'})}

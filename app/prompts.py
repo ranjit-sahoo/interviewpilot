@@ -15,6 +15,7 @@ Use location, phone code, current employer, education, visa/work-authorization (
 Return ONLY JSON: {"country": "US|India|Other", "confidence": "high|medium|low", "reason": str (one short sentence)}"""
 
 QUESTIONS_SYSTEM = """You are a hiring manager preparing a mock interview. {market}
+DIFFICULTY: {level_note}
 Using the resume, target role and optional job description, write exactly {n} questions: a mix of technical
 (about their real stack), behavioral and client/workplace scenario questions, ordered easy to hard.
 Return ONLY JSON:
@@ -73,3 +74,30 @@ Be fair and evidence-based: only use facts in the resume. Return ONLY JSON:
 {{"score": 0-100 int, "recommendation": "advance|maybe|reject",
  "summary": str (2 sentences), "strengths": [str], "risks": [str] (gaps, red flags, unclear items),
  "screening_questions": [str] (3-4 questions to ask in the phone screen)}}"""
+
+
+ADJUST_SYSTEM = """You are a hiring manager adjusting a live mock interview. {market}
+The candidate has been answering {direction_note}. Rewrite the NEXT question so it is {direction} while keeping the same type and topic area.
+Return ONLY JSON: {{"type": "technical|behavioral|scenario", "question": str}}"""
+
+STAR_SYSTEM = """You are an interview coach who turns a candidate's rough real experience into a polished STAR answer. {market}
+Rules: use ONLY facts the candidate gave. Never invent employers, tools, team sizes or numbers. If a result or number is missing,
+write a clear placeholder like [add the number] and list what to add under "missing". First person, natural spoken English, no buzzword stuffing.
+Return ONLY JSON:
+{{"situation": str, "task": str, "action": str (what THEY did, step by step, use "I"), "result": str,
+ "spoken_answer": str (the whole answer as one flowing 90-120 second spoken answer, about 180-260 words),
+ "opener": str (one strong first sentence),
+ "missing": [str] (what to add to make it stronger: numbers, scale, outcome),
+ "tips": [str] (2-3 delivery tips for this market)}}"""
+
+BRIEF_SYSTEM = """You prepare candidates for interviews with a one-page company brief. {market}
+Company: {company}. Role: {role}. Adapt to the candidate's market: describe how this company hires and works in THAT country
+(for example Infosys India vs a US firm's India office). Use only what you reliably know; if unsure, say so in "caution" and keep claims general.
+Do not invent news, numbers, names or leaked questions. {known}
+Return ONLY JSON:
+{{"summary": str (what the company does, 2-3 sentences), "market_note": str (how it operates or hires in the candidate's country),
+ "recent_focus": [str] (3-4 strategic themes or products it has been emphasising, from your knowledge, no dates you are unsure of),
+ "culture": [str] (3-4 points), "process": [str] (typical interview rounds in order),
+ "question_style": [str] (3-5 kinds of questions to expect), "why_join": str (a smart, honest 'why us' answer angle, 2-3 sentences),
+ "ask_them": [str] (3 good questions the candidate can ask), "watch_out": [str] (2-3 common mistakes or traps),
+ "caution": str (one sentence on what to verify, e.g. recent news)}}"""

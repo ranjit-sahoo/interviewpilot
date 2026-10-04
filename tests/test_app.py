@@ -34,7 +34,7 @@ def test_resume_review_too_short():
 
 
 def test_full_interview_flow():
-    s = c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer"}).json()
+    s = c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer", "followups": False}).json()
     sid, total = s["session_id"], s["total"]
     for i in range(total):
         r = c.post(f"/api/session/{sid}/answer", json={"answer": "I automated tests and cut time."}).json()
@@ -46,7 +46,7 @@ def test_full_interview_flow():
 
 
 def test_report_needs_answers():
-    s = c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer"}).json()
+    s = c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer", "followups": False}).json()
     assert c.get(f"/api/session/{s['session_id']}/report").status_code == 400
 
 
@@ -89,7 +89,7 @@ def test_comms_metrics():
 
 
 def test_interview_has_country_and_communication():
-    s = c.post("/api/session", json={"resume": RESUME, "role": "QA", "country": "India"}).json()
+    s = c.post("/api/session", json={"resume": RESUME, "role": "QA", "country": "India", "followups": False}).json()
     assert s["country"] == "India"
     r = c.post(f"/api/session/{s['session_id']}/answer", json={"answer": "Um I basically automated tests."}).json()
     comm = r["feedback"]["communication"]
@@ -164,7 +164,7 @@ def test_concurrent_users_do_not_collide():
 
 
 def test_same_session_parallel_answers_are_serialized():
-    s = c.post("/api/session", json={"resume": RESUME, "role": "QA"}).json()
+    s = c.post("/api/session", json={"resume": RESUME, "role": "QA", "followups": False}).json()
     codes = []
     ts = [threading.Thread(target=lambda: codes.append(c.post(f"/api/session/{s['session_id']}/answer", json={"answer": "a b c"}).status_code)) for _ in range(6)]
     [t.start() for t in ts]
@@ -352,3 +352,80 @@ def test_india_market_roles():
         assert r in rs
         assert len([q for q in bank.curated(r)["questions"]]) >= 15
     assert bank.match_role("tally accountant") == "Accountant (Tally)"
+
+
+def _start(**kw):
+    return c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer", **kw}).json()
+
+
+def test_followup_flow_then_advance_and_depth_probe():
+    d = _start()
+    sid = d["session_id"]
+    assert d["level"] == "auto"
+    a = c.post(f"/api/session/{sid}/answer", json={"answer": "I automated tests in Selenium for a payments app."}).json()
+    assert a["followup"]["type"] == "follow-up" and a["followup"]["n"] == 1 and a["number"] == 1 and not a["finished"]
+    b = c.post(f"/api/session/{sid}/answer", json={"answer": "The hardest part was flaky waits, so I used explicit waits."}).json()
+    assert "followup" not in b and b["number"] == 2 and b["next_question"]
+
+
+def test_followups_can_be_turned_off_and_level_is_kept():
+    d = _start(followups=False, level="brutal")
+    assert d["level"] == "brutal"
+    a = c.post(f"/api/session/{d['session_id']}/answer", json={"answer": "I wrote Selenium tests."}).json()
+    assert "followup" not in a and a["number"] == 2
+    assert _start(level="nonsense")["level"] == "auto"
+
+
+def test_difficulty_adjusts_after_strong_answer(monkeypatch):
+    from app import mock
+    orig = mock.reply
+
+    def strong(task, user):
+        r = orig(task, user)
+        if task == "turn":
+            r = dict(r, scores={"clarity": 5, "depth": 5, "correctness": 5, "star": 5})
+        return r
+
+    monkeypatch.setattr(mock, "reply", strong)
+    sid = _start(followups=False)["session_id"]
+    a = c.post(f"/api/session/{sid}/answer", json={"answer": "Excellent detailed answer with numbers."}).json()
+    assert a["difficulty"] == "harder" and a["next_question"]["question"].startswith("Adjusted question")
+
+
+def test_report_includes_followup_turns_and_score_card():
+    sid = _start()["session_id"]
+    c.post(f"/api/session/{sid}/answer", json={"answer": "I automated tests in Selenium."})
+    c.post(f"/api/session/{sid}/answer", json={"answer": "Explicit waits fixed the flaky tests."})
+    r = c.post(f"/api/session/{sid}/card", json={"name": "Jane <b>Doe</b>"}, headers={"host": "example.test"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["url"].startswith("http://example.test/c/") and d["image"].endswith(".png") and d["verdict"]
+    tok = d["url"].rsplit("/c/", 1)[1]
+    img = c.get(f"/c/{tok}.png")
+    assert img.status_code == 200 and img.content[:4] == b"\x89PNG"
+    page = c.get(f"/c/{tok}").text
+    assert "og:image" in page and "<b>Doe" not in page and "Jane" in page
+    assert c.get(f"/c/{tok[:-3]}abc.png").status_code == 404
+    assert c.get("/c/garbage").status_code == 404
+
+
+def test_card_requires_an_answer_first():
+    sid = _start()["session_id"]
+    assert c.post(f"/api/session/{sid}/card", json={}).status_code == 400
+
+
+def test_star_builder_and_validation():
+    r = c.post("/api/star", json={"experience": "Two teammates fought about test ownership before release and I sorted it out.", "question": "Tell me about a conflict", "role": "QA", "country": "India"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["spoken_answer"] and d["situation"] and d["result"] and isinstance(d["missing"], list)
+    assert c.post("/api/star", json={"experience": "short"}).status_code == 400
+
+
+def test_company_brief_and_validation():
+    r = c.post("/api/company-brief", json={"company": "Infosys", "role": "Java Developer", "country": "India"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["summary"] and d["process"] and d["news_url"].startswith("https://news.google.com/search?q=Infosys")
+    assert d["known_profile"] is True
+    assert c.post("/api/company-brief", json={"company": " "}).status_code == 400

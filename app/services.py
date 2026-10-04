@@ -61,19 +61,38 @@ def match_jd(resume: str, role: str, jd: str, country: str = "US"):
 
 
 # ---------- mock interview ----------
-def start_session(resume: str, role: str, jd: str = "", country: str = "US") -> dict:
+LEVELS = {
+    "auto": "Calibrate to the seniority shown on the resume and role.",
+    "fresher": "Entry level (0-2 years): fundamentals, simple practical scenarios, supportive but realistic.",
+    "experienced": "Mid to senior: depth, design trade-offs, ownership, and real production situations.",
+    "brutal": "Very demanding, top-company bar: hard problems, edge cases, probing every assumption, senior-level expectations.",
+}
+MAX_FOLLOWUPS = 2
+
+
+def _level(v) -> str:
+    v = (v or "auto").strip().lower()
+    return v if v in LEVELS else "auto"
+
+
+def start_session(resume: str, role: str, jd: str = "", country: str = "US", level: str = "auto", followups: bool = True) -> dict:
     country = market.normalize(country)
+    level = _level(level)
     qs = llm.chat_json(
-        "questions", _sys(prompts.QUESTIONS_SYSTEM, country, n=N_QUESTIONS), _ctx(resume, role, jd), model=llm.FAST_MODEL
+        "questions",
+        _sys(prompts.QUESTIONS_SYSTEM, country, n=N_QUESTIONS, level_note=LEVELS[level]),
+        _ctx(resume, role, jd),
+        model=llm.FAST_MODEL,
     ).get("questions", [])[:N_QUESTIONS]
     if not qs:
         raise llm.LLMError("no questions generated")
     data = {
         "kind": "interview", "country": country, "resume": resume[:MAX_RESUME_CHARS], "role": role, "jd": jd[:MAX_JD_CHARS],
-        "questions": qs, "index": 0, "turns": [], "done": False,
+        "questions": qs, "index": 0, "turns": [], "done": False, "level": level, "followups": bool(followups),
+        "pending": None, "group": [],
     }
     sid = db.create(data)
-    return {"session_id": sid, "question": qs[0], "number": 1, "total": len(qs), "country": country}
+    return {"session_id": sid, "question": qs[0], "number": 1, "total": len(qs), "country": country, "level": level}
 
 
 def _interview(sid: str) -> dict:
@@ -83,26 +102,103 @@ def _interview(sid: str) -> dict:
     return s
 
 
+def _perf(fb: dict) -> float:
+    sc = fb.get("scores") or {}
+    vals = []
+    for k in ("clarity", "depth", "correctness"):
+        try:
+            vals.append(float(sc.get(k)))
+        except (TypeError, ValueError):
+            pass
+    return sum(vals) / len(vals) if vals else 3.0
+
+
+def _adjust_next(s: dict) -> str | None:
+    """Make the next main question harder or easier based on how this question went. Never blocks the flow."""
+    g = s.get("group") or []
+    nxt = s["index"]
+    if not g or nxt >= len(s["questions"]):
+        return None
+    avg = sum(g) / len(g)
+    if avg >= 4.2:
+        direction, note, tag = "noticeably harder and more probing", "very well", "harder"
+    elif avg <= 2.2 and s.get("level") != "brutal":
+        direction, note, tag = "a little easier and more approachable", "with difficulty", "easier"
+    else:
+        return None
+    try:
+        q = s["questions"][nxt]
+        out = llm.chat_json(
+            "adjust_q",
+            _sys(prompts.ADJUST_SYSTEM, s["country"], direction=direction, direction_note=note),
+            f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nNEXT QUESTION ({q['type']}): {q['question']}",
+            model=llm.FAST_MODEL,
+        )
+        if isinstance(out, dict) and str(out.get("question", "")).strip():
+            qt = out.get("type") if out.get("type") in ("technical", "behavioral", "scenario") else q["type"]
+            s["questions"][nxt] = {"type": qt, "question": str(out["question"]).strip()[:600]}
+            return tag
+    except llm.LLMError:
+        pass
+    return None
+
+
+def load_interview(sid: str) -> dict:
+    return _interview(sid)
+
+
 def answer(sid: str, text: str) -> dict:
     with _lock(sid):
         s = _interview(sid)
         if s["done"]:
             raise ValueError("session already finished")
-        q = s["questions"][s["index"]]
-        user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
-        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"]), user, model=llm.STRONG_MODEL)
+        main_q = s["questions"][s["index"]]
+        pend = s.get("pending")
+        if pend:
+            q = {"type": "follow-up", "question": pend["question"]}
+            user = (
+                f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nMAIN QUESTION: {main_q['question']}\n"
+                f"INTERVIEWER FOLLOW-UP: {q['question']}\n\nCANDIDATE ANSWER TO THE FOLLOW-UP:\n{text[:4000]}"
+            )
+            model = llm.FAST_MODEL  # follow-ups stay quick
+        else:
+            q = main_q
+            user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
+            model = llm.STRONG_MODEL
+        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"]), user, model=model)
+        if not isinstance(fb, dict):
+            raise llm.LLMError("bad feedback")
         fb.setdefault("communication", {})
         fb["communication"]["metrics"] = comms.analyze(text)
-        s["turns"].append({"question": q, "answer": text, "feedback": fb})
+        s["turns"].append({"question": q, "answer": text, "feedback": fb, "followup": bool(pend)})
+        s.setdefault("group", []).append(_perf(fb))
+        done_n = pend["n"] if pend else 0
+        fu = " ".join(str(fb.get("followup") or "").split())[:400]
+        try:
+            depth = float((fb.get("scores") or {}).get("depth", 3))
+        except (TypeError, ValueError):
+            depth = 3.0
+        if s.get("followups", True) and fu and (done_n == 0 or (done_n < MAX_FOLLOWUPS and depth <= 2)):
+            s["pending"] = {"question": fu, "n": done_n + 1}
+            db.save(sid, s)
+            return {
+                "feedback": fb, "finished": False, "followup": {"type": "follow-up", "question": fu, "n": done_n + 1, "max": MAX_FOLLOWUPS},
+                "number": s["index"] + 1, "total": len(s["questions"]),
+            }
+        s["pending"] = None
         s["index"] += 1
         finished = s["index"] >= len(s["questions"])
         s["done"] = finished
+        shift = None if finished else _adjust_next(s)
+        s["group"] = []
         db.save(sid, s)
     out = {"feedback": fb, "finished": finished}
     if not finished:
         out["next_question"] = s["questions"][s["index"]]
         out["number"] = s["index"] + 1
         out["total"] = len(s["questions"])
+        if shift:
+            out["difficulty"] = shift
     return out
 
 
@@ -120,7 +216,7 @@ def report(sid: str) -> dict:
             for t in s["turns"]
         )
         rep = llm.chat_json(
-            "report", _sys(prompts.REPORT_SYSTEM, s["country"]), f"ROLE: {s['role']}\n\n{transcript}", model=llm.STRONG_MODEL
+            "report", _sys(prompts.REPORT_SYSTEM, s["country"]), f"ROLE: {s['role']} (difficulty: {s.get('level', 'auto')})\n\n{transcript}", model=llm.STRONG_MODEL
         )
         s["report"] = rep
         db.save(sid, s)

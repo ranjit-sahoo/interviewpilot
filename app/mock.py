@@ -80,6 +80,25 @@ def reply(task: str, user: str):
                 {"type": "behavioral", "question": "Describe a deadline you almost missed. How did you recover?"},
             ]
         }
+    if task == "star":
+        return {"situation": "In my last project two teammates kept disagreeing on how to split the test work, and the release was close.",
+                "task": "As the QA lead I had to unblock them and keep the release date.",
+                "action": "I met them separately, listed the risks, proposed a split by feature area and set a short daily check-in.",
+                "result": "We shipped on time. [add the number: defects or days saved]",
+                "spoken_answer": "In my last project, two teammates disagreed on how to split testing and the release was close. I was the QA lead, so I had to unblock them. I met each of them separately, wrote down the risks, then proposed a split by feature area with a short daily check-in. We shipped on time, and [add the number] fewer defects escaped.",
+                "opener": "Let me share a time I helped a team resolve a disagreement under a deadline.",
+                "missing": ["Team size", "A number for the result"], "tips": ["Pause before the result.", "Use I for your actions."]}
+    if task == "brief":
+        return {"summary": "Sample company that builds software and services for large clients.",
+                "market_note": "Hiring follows the usual local process for this market.",
+                "recent_focus": ["Cloud and AI services", "Large client programs"], "culture": ["Delivery focused", "Client first"],
+                "process": ["Recruiter call", "Technical interview", "Managerial round"],
+                "question_style": ["Project deep-dive", "Scenario questions"],
+                "why_join": "Link your skills to their client work and growth areas, with one specific example.",
+                "ask_them": ["What does success look like in 6 months?"], "watch_out": ["Generic answers about the company"],
+                "caution": "Offline sample. Verify news on the company site."}
+    if task == "adjust_q":
+        return {"type": "technical", "question": "Adjusted question: explain the trade-offs in the design you chose and what you would change at 10x scale."}
     if task == "turn":
         return {
             "scores": {"clarity": 3, "depth": 3, "correctness": 4, "star": 2},

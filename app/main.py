@@ -2,11 +2,11 @@ import io
 import os
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import accounts, bank, builder, coding, companies, llm, prep, services
+from app import accounts, bank, brief, builder, card, coding, companies, llm, prep, services, star
 from app.guard import RateLimiter, client_key, rate_limit
 
 app = FastAPI(title="InterviewPilot")
@@ -56,6 +56,8 @@ class StartIn(BaseModel):
     role: str = Field(max_length=200)
     jd: str = Field("", max_length=30000)
     country: str = "US"
+    level: str = Field("auto", max_length=20)
+    followups: bool = True
 
 
 class AnswerIn(BaseModel):
@@ -174,7 +176,7 @@ def match(body: MatchIn):
 
 @app.post("/api/session", dependencies=LIMITED)
 def start(body: StartIn):
-    return services.start_session(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+    return services.start_session(_need_resume(body.resume), _need_role(body.role), body.jd, body.country, body.level, body.followups)
 
 
 @app.post("/api/session/{sid}/answer", dependencies=LIMITED)
@@ -308,6 +310,69 @@ def prep_pack(body: StartIn):
 def prep_coding(body: StartIn):
     """Coding questions for technical profiles, loaded separately so the core pack shows up sooner."""
     return prep.build_coding(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+
+
+class StarIn(BaseModel):
+    experience: str = Field(max_length=6000)
+    question: str = Field("", max_length=400)
+    role: str = Field("", max_length=200)
+    country: str = "US"
+
+
+class BriefIn(BaseModel):
+    company: str = Field(max_length=80)
+    role: str = Field("", max_length=200)
+    country: str = "US"
+
+
+class CardIn(BaseModel):
+    name: str = Field("", max_length=40)
+
+
+@app.post("/api/star", dependencies=LIMITED)
+def star_build(body: StarIn):
+    if len(body.experience.strip()) < 30:
+        raise HTTPException(400, "Describe your experience in a few sentences (30+ characters).")
+    return star.build(body.experience, body.question, body.role, body.country)
+
+
+@app.post("/api/company-brief", dependencies=LIMITED)
+def company_brief(body: BriefIn):
+    if len(body.company.strip()) < 2:
+        raise HTTPException(400, "Enter a company name.")
+    return brief.build(body.company, body.role, body.country)
+
+
+def _base(request: Request) -> str:
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    return f"{proto}://{host}"
+
+
+@app.post("/api/session/{sid}/card", dependencies=LIMITED)
+def make_card(sid: str, body: CardIn, request: Request):
+    s = _guard(services.load_interview, sid)
+    rep = _guard(services.report, sid)
+    p = card.make_payload(rep, s["turns"], s["role"], s.get("level", "auto"), s["country"], body.name)
+    tok = card.sign(p)
+    base = _base(request)
+    return {"url": f"{base}/c/{tok}", "image": f"{base}/c/{tok}.png", "score": p["s"], "verdict": card.verdict(p["s"])}
+
+
+@app.get("/c/{token}.png")
+def card_png(token: str):
+    p = card.verify(token)
+    if not p:
+        raise HTTPException(404, "Card not found.")
+    return Response(card.render_png(p), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/c/{token}")
+def card_page(token: str, request: Request):
+    p = card.verify(token)
+    if not p:
+        raise HTTPException(404, "Card not found.")
+    return HTMLResponse(card.page(p, token, _base(request)), headers={"Cache-Control": "public, max-age=3600"})
 
 
 @app.get("/api/companies")
