@@ -82,5 +82,10 @@ The suite covers every endpoint, concurrent users, parallel answers to one sessi
 ## Limits
 AI feedback and salary figures are estimates, not guarantees. The free demo host sleeps when idle and does not keep sessions across redeploys.
 
+## Roadmap
+InterviewPilot is built for educated professionals in India and the US. The live app stays fully free and open (no payment, no paywall) through the hackathon judging period ending Dec 15, 2026.
+
+Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs, priced by the user's country: Rs 499 per year for India and $49 per year for the US. Not built yet; no payment code exists in this repository.
+
 ## License
 MIT. See [LICENSE](LICENSE).
