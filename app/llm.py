@@ -1,18 +1,60 @@
-"""Nebius Token Factory client (OpenAI-compatible API)."""
-import os
+"""LLM access through Nebius Token Factory (OpenAI-compatible API).
 
-from openai import OpenAI
+Two Nemotron models are used:
+  * FAST_MODEL   - question generation and interviewer follow-ups
+  * STRONG_MODEL - answer scoring, resume review and the final report
+
+If NEBIUS_API_KEY is not set the app runs in MOCK mode with canned replies so the
+UI and tests work offline. The mock is never used when a key is present.
+"""
+import json
+import os
+import re
 
 BASE_URL = os.environ.get("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/")
-# Model IDs are confirmed against the Token Factory catalog; override via env.
-FAST_MODEL = os.environ.get("FAST_MODEL", "nvidia/nemotron-fast-placeholder")
-STRONG_MODEL = os.environ.get("STRONG_MODEL", "nvidia/nemotron-ultra-placeholder")
+# Confirm exact IDs in the Token Factory model catalog and override via env.
+FAST_MODEL = os.environ.get("FAST_MODEL", "nvidia/Llama-3_1-Nemotron-Nano-8B-v1")
+STRONG_MODEL = os.environ.get("STRONG_MODEL", "nvidia/Llama-3_1-Nemotron-Ultra-253B-v1")
 
 
-def client() -> OpenAI:
+def mock_mode() -> bool:
+    return not os.environ.get("NEBIUS_API_KEY")
+
+
+def _client():
+    from openai import OpenAI
+
     return OpenAI(base_url=BASE_URL, api_key=os.environ["NEBIUS_API_KEY"])
 
 
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
-    resp = client().chat.completions.create(model=model, messages=messages, **kw)
-    return resp.choices[0].message.content
+    resp = _client().chat.completions.create(model=model, messages=messages, **kw)
+    return resp.choices[0].message.content or ""
+
+
+def extract_json(text: str):
+    """Pull the first JSON object out of a model reply (handles ``` fences and prose)."""
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
+    m = re.search(r"\{.*\}", text, flags=re.S)
+    if not m:
+        raise ValueError("no JSON object in model reply")
+    return json.loads(m.group(0))
+
+
+def chat_json(task: str, system: str, user: str, model: str = FAST_MODEL):
+    """Ask for JSON; in mock mode return the canned reply for `task`."""
+    if mock_mode():
+        from app import mock
+
+        return mock.reply(task, user)
+    for attempt in range(2):
+        out = chat(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            model=model,
+            temperature=0.4,
+        )
+        try:
+            return extract_json(out)
+        except ValueError:
+            user += "\n\nReturn ONLY one valid JSON object, nothing else."
+    raise RuntimeError("model did not return valid JSON")

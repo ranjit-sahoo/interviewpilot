@@ -19,7 +19,17 @@ export NEBIUS_API_KEY=...
 uvicorn app.main:app --reload
 ```
 
-Status: skeleton. Features land in the next commits.
+Without `NEBIUS_API_KEY` the app runs in demo mode with canned sample replies (offline). With a key it calls Token Factory.
+Override models with `FAST_MODEL` and `STRONG_MODEL` (IDs from the Token Factory catalog).
+
+## API
+- `POST /api/resume/review` (form: role, resume text or PDF/TXT file, optional jd) - weaknesses and fixes
+- `POST /api/session` - start a mock interview, returns first question
+- `POST /api/session/{id}/answer` - scores + stronger answer + tips + next question
+- `GET /api/session/{id}/report` - overall score, strengths, gaps, 7-day plan
+
+## Tests
+`pip install pytest httpx && pytest`
 
 ## License
 MIT

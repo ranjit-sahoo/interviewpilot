@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InterviewPilot</title>
+<style>
+:root{--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mute:#98a2b8;--acc:#76b900;--acc2:#4f8cff;--bad:#ff6b6b;--line:#27314a}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:920px;margin:0 auto;padding:24px 16px 80px}
+h1{margin:0 0 4px;font-size:28px}h1 span{color:var(--acc)}.sub{color:var(--mute);margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+label{display:block;font-weight:600;margin:10px 0 4px}
+input[type=text],textarea{width:100%;background:#0c111c;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+textarea{min-height:140px;resize:vertical}
+button{background:var(--acc);color:#0b1200;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;margin:10px 8px 0 0}
+button.alt{background:var(--acc2);color:#fff}button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:wait}
+.pill{display:inline-block;background:#0c111c;border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:13px;color:var(--mute);margin-right:6px}
+.w{border-left:3px solid var(--bad);padding:6px 12px;margin:10px 0;background:#0c111c;border-radius:0 8px 8px 0}
+.fix{color:var(--acc)}.score{font-size:34px;font-weight:800;color:var(--acc)}
+.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}.bar{background:#0c111c;border-radius:8px;padding:8px;text-align:center}
+.bar b{display:block;font-size:22px}.hide{display:none}.err{color:var(--bad)}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ba div{background:#0c111c;border-radius:8px;padding:10px}
+@media(max-width:640px){.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}}
+</style></head><body><div class="wrap">
+<h1>Interview<span>Pilot</span></h1>
+<div class="sub">Upload your resume. Get its weaknesses and how to fix them, then practice a realistic US IT interview with scoring and a 7-day plan.</div>
+<div id="mock" class="pill hide">demo mode (offline sample answers)</div>
+
+<div class="card" id="setup">
+  <label>Target role</label><input type="text" id="role" placeholder="e.g. QA Automation Engineer, Business Analyst, Java Developer">
+  <label>Resume (paste text) or upload PDF/TXT</label>
+  <textarea id="resume" placeholder="Paste your resume here..."></textarea>
+  <input type="file" id="file" accept=".pdf,.txt">
+  <label>Job description (optional)</label><textarea id="jd" style="min-height:80px"></textarea>
+  <button id="btnReview">1. Review my resume</button>
+  <button class="alt" id="btnStart">2. Start mock interview</button>
+  <div id="setupErr" class="err"></div>
+</div>
+
+<div class="card hide" id="review"></div>
+
+<div class="card hide" id="interview">
+  <div><span class="pill" id="qnum"></span><span class="pill" id="qtype"></span></div>
+  <h3 id="qtext"></h3>
+  <textarea id="ans" placeholder="Type your answer like you would say it in the interview..."></textarea>
+  <button id="btnAns">Submit answer</button><span id="busy" class="pill hide">scoring...</span>
+  <div id="ansErr" class="err"></div>
+  <div id="fb"></div>
+</div>
+
+<div class="card hide" id="report"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let sid=null,finished=false;
+fetch('/health').then(r=>r.json()).then(h=>{if(h.mock_mode)$('mock').classList.remove('hide')});
+
+async function api(url,opts){const r=await fetch(url,opts);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.detail||'Request failed');return j}
+function need(){const role=$('role').value.trim();if(!role){throw new Error('Enter your target role.')}return role}
+
+$('btnReview').onclick=async()=>{
+  $('setupErr').textContent='';const b=$('btnReview');b.disabled=true;b.textContent='Reviewing...';
+  try{
+    const fd=new FormData();fd.append('role',need());fd.append('resume',$('resume').value);fd.append('jd',$('jd').value);
+    if($('file').files[0])fd.append('file',$('file').files[0]);
+    const d=await api('/api/resume/review',{method:'POST',body:fd});renderReview(d);
+  }catch(e){$('setupErr').textContent=e.message}
+  b.disabled=false;b.textContent='1. Review my resume';
+};
+function renderReview(d){
+  const el=$('review');el.classList.remove('hide');
+  el.innerHTML=`<h2>Resume review <span class="score">${esc(d.score)}/10</span></h2><p>${esc(d.overall)}</p>
+  <h3>Weaknesses and how to fix them</h3>`+(d.weaknesses||[]).map(w=>`<div class="w"><b>${esc(w.issue)}</b><br>${esc(w.why_it_hurts)}<br><span class="fix">Fix: ${esc(w.fix)}</span></div>`).join('')
+  +((d.rewrite_examples||[]).length?'<h3>Rewrite examples</h3>'+d.rewrite_examples.map(x=>`<div class="ba"><div><small>Before</small><br>${esc(x.before)}</div><div><small>After</small><br>${esc(x.after)}</div></div>`).join(''):'')
+  +((d.strengths||[]).length?'<h3>Strengths</h3><ul>'+d.strengths.map(s=>`<li>${esc(s)}</li>`).join('')+'</ul>':'');
+  el.scrollIntoView({behavior:'smooth'});
+}
+$('btnStart').onclick=async()=>{
+  $('setupErr').textContent='';const b=$('btnStart');b.disabled=true;b.textContent='Preparing questions...';
+  try{
+    let resume=$('resume').value;
+    const f=$('file').files[0];
+    if(f&&!resume.trim()){ // extract text via the review endpoint's parser is overkill; read txt directly, PDFs need paste
+      if(f.name.toLowerCase().endsWith('.pdf'))throw new Error('For the interview, paste the resume text (PDF upload works for the review).');
+      resume=await f.text();
+    }
+    const d=await api('/api/session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({resume,role:need(),jd:$('jd').value})});
+    sid=d.session_id;finished=false;$('fb').innerHTML='';$('report').classList.add('hide');
+    showQ(d.question,d.number,d.total);$('interview').classList.remove('hide');$('interview').scrollIntoView({behavior:'smooth'});
+  }catch(e){$('setupErr').textContent=e.message}
+  b.disabled=false;b.textContent='2. Start mock interview';
+};
+function showQ(q,n,t){$('qnum').textContent=`Question ${n} of ${t}`;$('qtype').textContent=q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false}
+$('btnAns').onclick=async()=>{
+  $('ansErr').textContent='';$('btnAns').disabled=true;$('busy').classList.remove('hide');
+  try{
+    const d=await api(`/api/session/${sid}/answer`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answer:$('ans').value})});
+    const f=d.feedback,s=f.scores||{};
+    $('fb').innerHTML=`<h3>Feedback</h3><div class="bars">${['clarity','depth','correctness','star'].map(k=>`<div class="bar"><b>${esc(s[k])}/5</b>${k==='star'?'STAR':k}</div>`).join('')}</div>
+      <p>${esc(f.feedback)}</p><div class="w" style="border-color:var(--acc)"><b>A stronger answer</b><br>${esc(f.stronger_answer)}</div>
+      <ul>${(f.tips||[]).map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
+      ${f.followup?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}
+      <div id="nextArea"></div>`;
+    $('busy').classList.add('hide');
+    if(d.finished){finished=true;$('btnAns').disabled=true;$('nextArea').innerHTML='<button id="btnRep">See my session report</button>';$('btnRep').onclick=loadReport}
+    else{$('nextArea').innerHTML='<button id="btnNext">Next question</button>';$('btnNext').onclick=()=>{showQ(d.next_question,d.number,d.total);$('fb').innerHTML='';window.scrollTo({top:$('interview').offsetTop,behavior:'smooth'})}}
+  }catch(e){$('ansErr').textContent=e.message;$('btnAns').disabled=false;$('busy').classList.add('hide')}
+};
+async function loadReport(){
+  try{const r=await api(`/api/session/${sid}/report`);const el=$('report');el.classList.remove('hide');
+  el.innerHTML=`<h2>Session report <span class="score">${esc(r.overall_score)}/5</span></h2><p>${esc(r.summary)}</p>
+   <h3>Strengths</h3><ul>${(r.strengths||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+   <h3>Gaps</h3><ul>${(r.gaps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+   <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol>`;
+  el.scrollIntoView({behavior:'smooth'})}catch(e){$('ansErr').textContent=e.message}
+}
+</script></body></html>
