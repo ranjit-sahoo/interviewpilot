@@ -278,3 +278,53 @@ def test_builder_polish_misaligned_model_output_is_ignored(monkeypatch):
     monkeypatch.setattr(llm, "chat_json", lambda *a, **k: {"bullets": ["only one"]})
     b = c.post("/api/builder/polish", json={"role": "QA", "bullets": ["a b", "c d"]}).json()["bullets"]
     assert b == ["a b", "c d"]
+
+
+def test_prep_pack_has_model_answers_and_coding():
+    d = c.post("/api/prep", json={"resume": RESUME, "role": "QA Automation Engineer", "jd": "Selenium, Java, CI", "country": "US"}).json()
+    assert d["questions"] and all(q["model_answer"] for q in d["questions"])
+    assert d["coding_profile"] is True and d["coding_questions"] and d["coding_questions"][0]["solution"]
+    assert c.post("/api/prep", json={"resume": "hi", "role": "QA"}).status_code == 400
+    assert c.post("/api/prep", json={"resume": RESUME, "role": ""}).status_code == 400
+
+
+def test_prep_skips_coding_call_for_non_technical(monkeypatch):
+    from app import prep
+
+    prep._cache.clear()
+    seen = []
+    real = llm.chat_json
+
+    def spy(task, *a, **k):
+        seen.append(task)
+        return real(task, *a, **k)
+
+    monkeypatch.setattr(llm, "chat_json", spy)
+    hr = "Priya Rao. HR recruiter with 6 years in talent acquisition, onboarding and employee relations in Pune."
+    c.post("/api/prep", json={"resume": hr, "role": "HR Manager", "country": "India"})
+    assert "prep_core" in seen and "prep_code" not in seen
+
+
+def test_prep_cached(monkeypatch):
+    from app import prep
+
+    prep._cache.clear()
+    body = {"resume": RESUME, "role": "QA Engineer", "country": "US"}
+    c.post("/api/prep", json=body)
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: (_ for _ in ()).throw(AssertionError("should be cached")))
+    assert c.post("/api/prep", json=body).status_code == 200
+
+
+def test_company_profiles():
+    ds = c.get("/api/companies").json()["companies"]
+    assert "Google" in ds and "TCS" in ds and len(ds) >= 30
+    d = c.post("/api/bank", json={"role": "Java Developer", "company": "tcs"}).json()
+    assert d["profile"]["country"] == "India" and d["profile"]["rounds"]
+    assert c.post("/api/bank", json={"role": "Java Developer", "company": "Unknown Startup"}).json()["profile"] is None
+    assert c.post("/api/bank", json={"role": "QA", "company": "Cognizant", "country": "India"}).json()["profile"]["country"] == "India"
+
+
+def test_known_company_is_instant_unless_ai_requested(monkeypatch):
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no AI call expected")))
+    d = c.post("/api/bank", json={"role": "QA", "company": "Google"}).json()
+    assert d["profile"]["name"] == "Google" and d["company"] is None

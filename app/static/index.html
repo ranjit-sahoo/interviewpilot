@@ -66,7 +66,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 <header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
-<div class="feat"><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
+<div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
 <div id="mock" class="pill hide">demo mode (offline sample answers)</div>
 
 <div class="card" id="profile">
@@ -81,11 +81,14 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 </div>
 
 <div class="tabs" id="tabs" role="tablist">
-  <button data-t="review" class="on">Resume Review</button><button data-t="match">JD Match</button>
+  <button data-t="prep" class="on">Interview Prep</button><button data-t="review">Resume Review</button><button data-t="match">JD Match</button>
   <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button>
 </div>
 
-<section id="t-review" class="card"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
+<section id="t-prep" class="card"><p class="note">Your resume, your job description, your market. Get the questions you are most likely to face, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
+  <button id="btnPrep">Generate my interview prep pack</button><div id="prepErr" class="err" role="alert"></div><div id="prepOut"></div></section>
+
+<section id="t-review" class="card hide"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
 
 <section id="t-match" class="card hide"><button id="btnMatch">Compare resume with job description</button><div id="matchOut"></div></section>
 
@@ -127,7 +130,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <p class="note">Common questions for your role, with how to answer them. Add a company to get questions in its style.</p>
   <label for="bankRole">Role</label><input type="text" id="bankRole" list="bankRoles" maxlength="200" placeholder="Pick or type a role">
   <datalist id="bankRoles"></datalist>
-  <label for="bankCo">Company (optional)</label><input type="text" id="bankCo" maxlength="80" placeholder="e.g. Infosys, Google, Deloitte">
+  <label for="bankCo">Company (optional)</label><input type="text" id="bankCo" list="bankCos" maxlength="80" placeholder="e.g. Infosys, Google, Deloitte"><datalist id="bankCos"></datalist>
   <button id="btnBank" class="alt">Show questions</button>
   <div id="bankErr" class="err" role="alert"></div>
   <div id="bankCoOut"></div><div class="chips" id="bankFilter" role="group" aria-label="Filter"></div><div id="bankOut"></div>
@@ -199,10 +202,11 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['review','match','interview','nego','bank','code','builder','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();profErr('')};
+  ['prep','review','match','interview','nego','bank','code','builder','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();profErr('')};
 
 // ---- question bank
 let bankAll=[],bankFilter='all';
+fetch('/api/companies').then(r=>r.json()).then(j=>{$('bankCos').innerHTML=j.companies.map(r=>`<option value="${esc(r)}">`).join('')}).catch(()=>{});
 fetch('/api/bank/roles').then(r=>r.json()).then(j=>{$('bankRoles').innerHTML=j.roles.map(r=>`<option value="${esc(r)}">`).join('')}).catch(()=>{});
 function bankCard(q){return `<div class="cand"><span class="pill">${esc(q.type)}</span><span class="pill">${esc(q.level)}</span><p><b>${esc(q.question)}</b></p>${q.hint?`<details><summary>How to answer</summary><p>${esc(q.hint)}</p></details>`:''}</div>`}
 function bankRender(){
@@ -211,20 +215,23 @@ function bankRender(){
   document.querySelectorAll('#bankFilter button').forEach(b=>b.classList.toggle('on',b.dataset.f===bankFilter));
 }
 $('bankFilter').onclick=e=>{if(e.target.dataset.f){bankFilter=e.target.dataset.f;bankRender()}};
-$('btnBank').onclick=()=>busy($('btnBank'),'Loading...',async()=>{
+async function bankGo(ai){
   $('bankErr').textContent='';
   try{
     const r=($('bankRole').value||$('role').value).trim(),co=$('bankCo').value.trim();
-    const d=await post('/api/bank',{role:r,company:co,country:country||'US'});
+    const d=await post('/api/bank',{role:r,company:co,country:country||'US',ai:!!ai});
     let html='';
+    if(d.profile){const p=d.profile;html+=`<div class="cand"><b>${esc(p.name)}</b> <span class="pill">${esc(p.country)}</span><span class="pill">${esc(p.kind)}</span><p>Typical rounds: ${esc(p.rounds)}</p><p>Focus:</p>${ul(p.focus)}<p>Tip: ${esc(p.tip)}</p><div class="note">${esc(p.note)}</div>${d.company?'':'<button class="ghost" id="bankAi">Generate company-style questions (AI)</button>'}</div>`}
     if(d.company_error)html+=`<p class="note">${esc(d.company_error)}</p>`;
     if(d.company)html+=`<h3>${esc(d.company.company)} style</h3><p class="note">${esc(d.company.note)}</p>`+d.company.questions.map(bankCard).join('')+`<h3>${esc(d.role)} questions</h3>`;
     $('bankCoOut').innerHTML=html;
     bankAll=d.questions;bankFilter='all';
     $('bankFilter').innerHTML=['all','technical','behavioral','scenario'].map(f=>`<button data-f="${f}">${f}</button>`).join('');
     bankRender();
+    const ba=$('bankAi');if(ba)ba.onclick=()=>busy(ba,'Generating...',()=>bankGo(true));
   }catch(e){$('bankErr').textContent=e.message}
-});
+}
+$('btnBank').onclick=()=>busy($('btnBank'),'Loading...',()=>bankGo(false));
 
 // ---- coding practice
 let cpId=null,cpLevel=0,cpDrafts={};
@@ -309,6 +316,21 @@ $('rbFill').onclick=()=>busy($('rbFill'),'Reading...',async()=>{$('rbErr').textC
 $('rbTpl').onchange=e=>{$('rbPrev').className=e.target.value};
 $('rbPrint').onclick=()=>{rbPrevRender();window.print()};
 rbFormRender();
+
+// ---- interview prep pack (hero)
+const qCard=(q,i)=>`<div class="cand"><span class="pill">${esc(q.type)}</span><p><b>${i+1}. ${esc(q.question)}</b></p>${q.why_asked?`<div class="note">Why they ask: ${esc(q.why_asked)}</div>`:''}<details><summary>Model answer</summary><p>${esc(q.model_answer)}</p></details></div>`;
+const cCard=q=>`<div class="cand"><span class="pill">${esc(q.level)}</span><span class="pill">${esc(q.language)}</span><p><b>${esc(q.title)}</b></p><p>${esc(q.problem)}</p><details><summary>Approach and solution</summary><p>${esc(q.approach)}</p><pre style="white-space:pre-wrap;background:var(--card2);padding:10px;border-radius:10px;overflow-x:auto">${esc(q.solution)}</pre><div class="note">${esc(q.complexity)}</div></details></div>`;
+$('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10-20 s)...',async()=>{
+  $('prepErr').textContent='';$('prepOut').innerHTML='';
+  try{const r=resumeText(),ro=role(),jd=$('jd').value.trim();
+    if(!countryTouched&&!country)await detect();
+    const d=await post('/api/prep',{resume:r,role:ro,jd,country:country||'US'});
+    let h=`<div class="note">Tailored for the ${esc(d.country)} market${jd?' and your job description':''}.</div>`;
+    if(d.focus.length)h+='<h3>Revise these first</h3>'+ul(d.focus);
+    h+='<h3>Likely questions with model answers</h3>'+d.questions.map(qCard).join('');
+    if(d.coding_questions.length)h+='<h3>Coding questions for your profile</h3>'+d.coding_questions.map(cCard).join('')+'<p><button class="ghost" id="prepToCode">Practice coding with AI review</button></p>';
+    $('prepOut').innerHTML=h;const b=$('prepToCode');if(b)b.onclick=()=>document.querySelector('[data-t=code]').click();
+  }catch(e){$('prepErr').textContent=e.message}});
 
 // ---- country
 function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}

@@ -59,3 +59,15 @@ def detect_heuristic(resume: str, jd: str = "") -> dict:
     if i == u:
         country, conf = "Other", "low"
     return {"country": country, "confidence": conf, "reason": f"Found {i} India and {u} US signals in the text."}
+
+
+_TECH = re.compile(
+    r"\b(developer|engineer|programmer|sdet|devops|sre|software|backend|frontend|full[\s-]?stack|data (engineer|scientist|analyst)|"
+    r"machine learning|ml |python|java|javascript|typescript|c\+\+|golang|react|sql|selenium|api|cloud|aws|azure|kubernetes|qa automation)\b",
+    re.I,
+)
+
+
+def looks_technical(role: str, resume: str) -> bool:
+    """Cheap check so the coding-question call only runs for technical profiles."""
+    return bool(_TECH.search(role or "")) or len(_TECH.findall((resume or "")[:6000])) >= 4

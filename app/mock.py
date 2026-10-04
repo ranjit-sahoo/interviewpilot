@@ -60,6 +60,16 @@ def reply(task: str, user: str):
         return {"bullets": ["Delivered: " + l for l in lines]}
     if task == "builder_summary":
         return {"summary": "Results-driven professional with hands-on experience in the listed tools, ready to contribute from day one."}
+    if task == "prep_core":
+        return {"coding": True, "focus": ["Selenium", "API testing", "CI/CD"],
+                "questions": [
+                    {"type": "technical", "question": "Walk me through the automation framework you built at your last job.", "model_answer": "At my last role I built a Selenium and Java framework with a Page Object structure, ran it in CI, and cut regression time by [X]%. I owned the design and onboarded two teammates.", "why_asked": "Checks real depth in your main tool."},
+                    {"type": "behavioral", "question": "Tell me about a time you disagreed with a developer about a bug.", "model_answer": "Situation: a release bug was marked not-a-bug. I reproduced it, shared logs, and paired with the developer. We fixed it before release and agreed on a clearer bug template.", "why_asked": "Tests collaboration."},
+                    {"type": "scenario", "question": "A client wants a release tonight but regression is failing. What do you do?", "model_answer": "I would triage failures by risk, separate flaky from real, share a clear go or no-go with data, and offer a safe partial release.", "why_asked": "Tests judgment under pressure."},
+                ]}
+    if task == "prep_code":
+        return {"coding_questions": [
+            {"title": "Two Sum", "level": "easy", "problem": "Return indices of two numbers adding to a target. Example: [2,7,11], 9 -> [0,1].", "approach": "Scan once, keep a map of seen numbers.", "solution": "def solve(nums, t):\n    seen = {}\n    for i, n in enumerate(nums):\n        if t - n in seen:\n            return [seen[t - n], i]\n        seen[n] = i", "language": "Python", "complexity": "O(n) time, O(n) space"}]}
     if task == "questions":
         return {
             "questions": [

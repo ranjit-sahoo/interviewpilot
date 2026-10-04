@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import bank, builder, coding, llm, services
+from app import bank, builder, coding, companies, llm, prep, services
 from app.guard import rate_limit
 
 app = FastAPI(title="InterviewPilot")
@@ -194,6 +194,7 @@ class BankIn(BaseModel):
     role: str = Field("", max_length=200)
     company: str = Field("", max_length=80)
     country: str = "US"
+    ai: bool = False
 
 
 @app.get("/api/bank/roles")
@@ -208,7 +209,8 @@ def question_bank(body: BankIn):
         raise HTTPException(400, "Enter a role or a company.")
     out = bank.curated(body.role)
     out["company"] = None
-    if body.company.strip():
+    out["profile"] = companies.find(body.company, body.country)
+    if body.company.strip() and (out["profile"] is None or body.ai):
         try:
             out["company"] = bank.company_questions(body.company, body.role, body.country)
         except llm.LLMError:
@@ -271,6 +273,17 @@ def builder_polish(body: PolishIn):
 @app.post("/api/builder/summary", dependencies=LIMITED)
 def builder_summary(body: SummaryIn):
     return {"summary": _guard(builder.summary, body.role, body.facts, body.country)}
+
+
+@app.post("/api/prep", dependencies=LIMITED)
+def prep_pack(body: StartIn):
+    """The hero flow: tailored questions with model answers (and coding questions) from resume + JD."""
+    return prep.build(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+
+
+@app.get("/api/companies")
+def company_list():
+    return {"companies": companies.names()}
 
 
 @app.get("/sw.js")
