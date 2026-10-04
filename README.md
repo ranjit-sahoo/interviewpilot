@@ -1,46 +1,78 @@
----
-title: InterviewPilot
-emoji: 🎯
-colorFrom: indigo
-colorTo: blue
-sdk: docker
-app_port: 7860
-pinned: false
-license: mit
----
-
 # InterviewPilot
 
-AI interview prep agent for US IT job candidates. Built for the Nebius x NVIDIA Global AI Hackathon (track: Best Apps and Agents).
+**AI interview prep for IT candidates and recruiters, built on NVIDIA Nemotron and Nebius Token Factory.**
+
+Live demo: https://interviewpilot-bdzx.onrender.com (free hosting: the first load after idle can take about a minute)
+
+Built for the Nebius x NVIDIA Global AI Hackathon, track **Best Apps and Agents**.
+
+## The problem
+IT staffing candidates, especially freshers and people moving between the India and US markets, get few chances to practice real interviews. Resume advice is generic, mock interviews are expensive, and nobody coaches the spoken English, the salary conversation or the US-client scenarios that decide offers.
 
 ## What it does
-1. **Resume review** - upload your resume and target role. Get a list of weaknesses and concrete advice on how to fix each one.
-2. **Tailored questions** - technical, behavioral and US-client scenario questions built from your resume and the role (optional job description).
-3. **Realistic mock interview** - one question at a time, with follow-ups, like a real interviewer.
-4. **Per-answer feedback** - 1-5 scores for clarity, depth, correctness and STAR structure, plus a stronger sample answer and US-interview tips.
-5. **Session report** - overall score, strengths, gaps and a 7-day practice plan.
+| Feature | What you get |
+|---|---|
+| **Country detection** | The agent reads the resume and job description, pre-selects US, India or Other, and you confirm in one tap. Interview style, feedback and salary figures adapt to the market. UI stays in English. |
+| **Resume review** | Weaknesses, why each one hurts, and a concrete fix, plus before/after rewrites. |
+| **JD match (ATS)** | Match score, found and missing keywords, honest gaps and tailored rewrites of real resume lines. |
+| **Mock interview** | Technical, behavioral and client-scenario questions from your own resume. One question at a time, with follow-ups. |
+| **Voice interview** | The interviewer speaks, you answer out loud. US or Indian English voice, adjustable speed, saved preferences. Type mode is always available. |
+| **Scoring and communication coaching** | 1-5 scores for clarity, depth, correctness and STAR, a stronger answer built from your experience, plus fluency, tone, phrasing fixes and measured filler words. |
+| **Session report** | Overall score, strengths, gaps, communication summary and a 7-day plan. |
+| **Salary negotiation** | Role-play against an AI recruiter with a market range, turn-by-turn coaching and a debrief with ready-to-use lines. |
+| **Recruiter mode** | Screen up to 10 resumes against a job description: ranked scores, advance/maybe/reject, risks and phone-screen questions. |
 
-## Stack
-Python FastAPI, SQLite, simple web front end. Models run on **Nebius Token Factory** (OpenAI-compatible API) using **NVIDIA Nemotron**: a larger Nemotron for scoring and reports, a faster one for question generation and follow-ups.
+## How Nebius Token Factory and NVIDIA Nemotron are used
+All model calls go through the **Nebius Token Factory** OpenAI-compatible API (`https://api.tokenfactory.nebius.com/v1/`).
 
-## Run
+| Role | Model | Used for |
+|---|---|---|
+| Strong | `nvidia/Nemotron-3-Ultra-550b-a55b` | Resume review, JD match, answer scoring, reports, negotiation setup and debrief |
+| Fast | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` | Question generation, country detection, negotiation replies, recruiter screening |
+
+Splitting work between a large and a small Nemotron keeps interactive steps (questions, recruiter replies) quick while the deeper reasoning steps (scoring, reports) get the largest model. Every prompt asks for strict JSON, and a parser handles reasoning tags and code fences from the models.
+
+## Architecture
+```
+Browser (single-page app, PWA)           FastAPI                        Nebius Token Factory
+ - Web Speech API: voice in/out   -->    /api/*  rate limit, validation  -->  Nemotron Ultra / Nano
+ - tabs: review, match, interview,       services: prompts, scoring,
+   negotiation, recruiter                 comms metrics, country context
+                                          SQLite sessions (WAL, per-session locks)
+```
+- Concurrency: per-session locks, a global cap on simultaneous model calls, per-IP rate limiting, request size limits, model timeouts and retries, friendly errors when the model service is unavailable.
+- Voice runs entirely in the browser (Web Speech API), so there is no audio server and no extra cost.
+- Installable as a PWA (manifest and service worker). The API is separate under `/api`, with optional CORS, so a mobile shell can reuse it later.
+
+## Run locally
 ```
 pip install -r requirements.txt
 export NEBIUS_API_KEY=...
 uvicorn app.main:app --reload
 ```
+Without `NEBIUS_API_KEY` the app runs in demo mode with canned replies so the UI and tests work offline. Override models with `FAST_MODEL` and `STRONG_MODEL`. Other settings: `LLM_CONCURRENCY` (default 8), `RATE_LIMIT_PER_MIN` (default 60), `INTERVIEWPILOT_DB`, `CORS_ORIGINS`.
 
-Without `NEBIUS_API_KEY` the app runs in demo mode with canned sample replies (offline). With a key it calls Token Factory.
-Override models with `FAST_MODEL` and `STRONG_MODEL` (IDs from the Token Factory catalog).
+Docker: `docker build -t interviewpilot . && docker run -p 7860:7860 -e NEBIUS_API_KEY=... interviewpilot`
 
 ## API
-- `POST /api/resume/review` (form: role, resume text or PDF/TXT file, optional jd) - weaknesses and fixes
-- `POST /api/session` - start a mock interview, returns first question
-- `POST /api/session/{id}/answer` - scores + stronger answer + tips + next question
-- `GET /api/session/{id}/report` - overall score, strengths, gaps, 7-day plan
+- `POST /api/detect-country` - detect US / India / Other from resume and JD
+- `POST /api/resume/review` - weaknesses and fixes
+- `POST /api/match` - ATS match against a job description
+- `POST /api/session`, `POST /api/session/{id}/answer`, `GET /api/session/{id}/report` - mock interview
+- `POST /api/negotiation`, `POST /api/negotiation/{id}/say`, `GET /api/negotiation/{id}/report` - salary practice
+- `POST /api/recruiter/screen` - rank candidate resumes
+- `POST /api/extract` - text from a PDF or TXT upload
+- `GET /health`
 
 ## Tests
-`pip install pytest httpx && pytest`
+```
+pip install pytest httpx
+pytest
+```
+The suite covers every endpoint, concurrent users, parallel answers to one session, rate limiting and model-failure handling.
+
+## Limits
+AI feedback and salary figures are estimates, not guarantees. The free demo host sleeps when idle and does not keep sessions across redeploys.
 
 ## License
-MIT
+MIT. See [LICENSE](LICENSE).
