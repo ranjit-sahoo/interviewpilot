@@ -10,6 +10,14 @@ from app import llm, services
 from app.guard import rate_limit
 
 app = FastAPI(title="InterviewPilot")
+
+# A future mobile shell or separate web front end can call the API cross-origin.
+# Set CORS_ORIGINS="https://app.example.com,capacitor://localhost" to enable; off by default.
+_origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip()]
+if _origins:
+    from fastapi.middleware.cors import CORSMiddleware
+
+    app.add_middleware(CORSMiddleware, allow_origins=_origins, allow_methods=["GET", "POST"], allow_headers=["*"])
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 MAX_UPLOAD = 5 * 1024 * 1024
 LIMITED = [Depends(rate_limit)]
@@ -180,6 +188,12 @@ def screen(body: ScreenIn):
     return _guard(
         services.screen_candidates, [c.model_dump() for c in body.candidates], _need_role(body.role), body.jd, body.country
     )
+
+
+@app.get("/sw.js")
+def service_worker():
+    # Served from the root so its scope covers the whole app.
+    return FileResponse(os.path.join(STATIC, "sw.js"), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/")

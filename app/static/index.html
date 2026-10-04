@@ -1,38 +1,63 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>InterviewPilot - AI interview prep</title>
+<meta name="description" content="AI interview prep for IT candidates and recruiters: resume review, JD match, voice mock interviews, salary negotiation practice and recruiter screening.">
+<meta name="theme-color" content="#0b1020"><link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" href="/static/icons/icon-192.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="InterviewPilot"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
 <style>
-:root{--bg:#0f1420;--card:#171e2e;--ink:#e8ecf5;--mute:#98a2b8;--acc:#76b900;--acc2:#4f8cff;--bad:#ff6b6b;--warn:#ffb84d;--line:#27314a}
-*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
-.wrap{max-width:960px;margin:0 auto;padding:24px 16px 80px}
-h1{margin:0 0 4px;font-size:28px}h1 span{color:var(--acc)}.sub{color:var(--mute);margin-bottom:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
-label{display:block;font-weight:600;margin:10px 0 4px}
-input[type=text],textarea,select{width:100%;background:#0c111c;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit}
+:root{--bg:#0b1020;--card:rgba(255,255,255,.04);--card2:#0d1426;--ink:#eef2fb;--mute:#9aa6c0;--acc:#76b900;--acc2:#5b8cff;--bad:#ff6b7a;--warn:#ffb84d;--line:rgba(255,255,255,.09);--r:16px;--shadow:0 10px 40px rgba(0,0,0,.35)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font:16px/1.6 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg);
+ background-image:radial-gradient(900px 500px at 85% -10%,rgba(91,140,255,.22),transparent),radial-gradient(700px 400px at -10% 10%,rgba(118,185,0,.16),transparent);background-attachment:fixed;-webkit-font-smoothing:antialiased}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 90px}
+.hero{padding:28px 0 8px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.3px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#9be000,#76b900);display:grid;place-items:center;color:#0b1200;font-size:15px;font-weight:900}
+h1{font-size:clamp(30px,5.5vw,48px);line-height:1.1;margin:18px 0 10px;letter-spacing:-1.2px;font-weight:800}
+h1 em{font-style:normal;background:linear-gradient(90deg,#9be000,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--mute);max-width:640px;font-size:17px}
+.feat{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}.feat span{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 13px;font-size:13.5px;color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:16px 0;box-shadow:var(--shadow);backdrop-filter:blur(8px);animation:rise .35s ease both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+label{display:block;font-weight:600;margin:14px 0 6px;font-size:14.5px}
+input[type=text],textarea,select{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(91,140,255,.25)}
 textarea{min-height:120px;resize:vertical}
-button{background:var(--acc);color:#0b1200;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;margin:10px 8px 0 0;font:inherit;font-weight:700}
-button.alt{background:var(--acc2);color:#fff}button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-button:disabled{opacity:.5;cursor:wait}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc2);outline-offset:2px}
-.pill{display:inline-block;background:#0c111c;border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:13px;color:var(--mute);margin-right:6px}
-.chips button{background:#0c111c;color:var(--ink);border:1px solid var(--line);margin:4px 6px 0 0;padding:6px 14px}
-.chips button.on{background:var(--acc);color:#0b1200;border-color:var(--acc)}
-.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 0}.tabs button{background:#0c111c;color:var(--mute);border:1px solid var(--line);margin:0}
-.tabs button.on{background:var(--acc2);color:#fff;border-color:var(--acc2)}
-.w{border-left:3px solid var(--bad);padding:6px 12px;margin:10px 0;background:#0c111c;border-radius:0 8px 8px 0}
-.g{border-left-color:var(--acc)}.fix{color:var(--acc)}.score{font-size:34px;font-weight:800;color:var(--acc)}
-.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}.bar{background:#0c111c;border-radius:8px;padding:8px;text-align:center}
-.bar b{display:block;font-size:22px}.hide{display:none}.err{color:var(--bad);margin-top:8px}.note{color:var(--mute);font-size:14px}
-.ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ba div{background:#0c111c;border-radius:8px;padding:10px}
-.kw span{display:inline-block;border-radius:6px;padding:2px 8px;margin:3px 4px 0 0;font-size:14px}.kw .ok{background:#1d3a14;color:#b7f27a}.kw .miss{background:#43202a;color:#ffb3b3}
-.bubble{padding:10px 14px;border-radius:12px;margin:8px 0;max-width:85%}.bubble.r{background:#0c111c;border:1px solid var(--line)}.bubble.c{background:#1d2c4d;margin-left:auto}
-.cand{border:1px solid var(--line);border-radius:10px;padding:10px;margin:10px 0;background:#0c111c}.cand textarea{min-height:80px}
+input[type=file]{margin-top:8px;color:var(--mute);font-size:14px}input[type=file]::file-selector-button{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;margin-right:10px;cursor:pointer}
+input[type=range]{width:100%;accent-color:var(--acc)}
+button{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border:0;border-radius:12px;padding:11px 20px;font:inherit;font-weight:700;cursor:pointer;margin:12px 8px 0 0;transition:transform .12s,box-shadow .15s,opacity .15s;box-shadow:0 6px 18px rgba(118,185,0,.25)}
+button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(118,185,0,.32)}
+button.alt{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;box-shadow:0 6px 18px rgba(91,140,255,.28)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
+button:disabled{opacity:.55;cursor:wait}button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:13px;color:var(--mute);margin:0 6px 4px 0}
+.chips button{background:var(--card2);color:var(--ink);border:1px solid var(--line);margin:4px 8px 0 0;padding:8px 20px;box-shadow:none}
+.chips button.on{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border-color:transparent}
+.tabs{display:flex;gap:6px;margin:18px 0 0;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;position:sticky;top:8px;z-index:5;backdrop-filter:blur(12px);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:transparent;color:var(--mute);margin:0;padding:9px 16px;white-space:nowrap;box-shadow:none;flex:1}
+.tabs button.on{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.35)}
+.w{border-left:3px solid var(--bad);padding:10px 14px;margin:12px 0;background:var(--card2);border-radius:0 12px 12px 0}
+.g{border-left-color:var(--acc)}.fix{color:#a8e04a}
+.score{font-size:30px;font-weight:800;background:linear-gradient(90deg,#9be000,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-left:6px}
+h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
+.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.bar{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;color:var(--mute);font-size:13px}
+.bar b{display:block;font-size:24px;color:var(--ink)}.hide{display:none!important}.err{color:var(--bad);margin-top:10px}.note{color:var(--mute);font-size:14px}
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ba div{background:var(--card2);border-radius:12px;padding:12px;border:1px solid var(--line)}
+.kw span{display:inline-block;border-radius:8px;padding:3px 10px;margin:4px 6px 0 0;font-size:14px}.kw .ok{background:rgba(118,185,0,.15);color:#b7f27a}.kw .miss{background:rgba(255,107,122,.14);color:#ffb3b9}
+.bubble{padding:12px 16px;border-radius:16px;margin:10px 0;max-width:85%}.bubble.r{background:var(--card2);border:1px solid var(--line);border-bottom-left-radius:4px}.bubble.c{background:linear-gradient(135deg,#2a4aa8,#233c85);margin-left:auto;border-bottom-right-radius:4px}
+.cand{border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;background:var(--card2)}.cand textarea{min-height:80px;margin-top:8px}
 .rec-advance{color:var(--acc)}.rec-maybe{color:var(--warn)}.rec-reject{color:var(--bad)}
-.mic{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.live{color:var(--bad);font-weight:700}
-.toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-left:8px}.toggle button{margin:0;border-radius:0;background:#0c111c;color:var(--mute);padding:6px 14px}.toggle button.on{background:var(--acc2);color:#fff}
-@media(max-width:640px){.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}}
+.mic{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.live{color:var(--bad);font-weight:700;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.4}}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-left:8px;vertical-align:bottom}.toggle button{margin:0;border-radius:0;background:var(--card2);color:var(--mute);padding:9px 18px;box-shadow:none}.toggle button.on{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff}
+.foot{margin-top:40px;text-align:center;color:var(--mute);font-size:13px}
+@media(max-width:640px){.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}.card{padding:16px}.tabs button{padding:9px 12px;font-size:14px;flex:none}}
 </style></head><body><div class="wrap">
-<h1>Interview<span>Pilot</span></h1>
-<div class="sub">AI interview prep for IT candidates and recruiters. Powered by NVIDIA Nemotron on Nebius Token Factory.</div>
+<header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
+<h1>Walk into every interview <em>ready</em>.</h1>
+<div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
+<div class="feat"><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
 <div id="mock" class="pill hide">demo mode (offline sample answers)</div>
 
 <div class="card" id="profile">
@@ -95,8 +120,10 @@ button:disabled{opacity:.5;cursor:wait}button:focus-visible,input:focus-visible,
   <button id="btnScreen" class="alt">Screen candidates</button><span id="scrBusy" class="pill hide">screening...</span>
   <div id="scrErr" class="err" role="alert"></div><div id="scrOut"></div>
 </section>
+<div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees.</div>
 </div>
 <script>
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ul=a=>(a&&a.length)?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'';

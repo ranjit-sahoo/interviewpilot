@@ -176,3 +176,13 @@ def test_ui_has_voice_controls():
     html = c.get("/").text
     for needle in ('id="vAccent"', 'en-IN', 'id="vRate"', "localStorage", "speechSynthesis"):
         assert needle in html
+
+
+def test_pwa_assets():
+    m = c.get("/static/manifest.webmanifest").json()
+    assert m["display"] == "standalone" and len(m["icons"]) >= 2
+    for i in m["icons"]:
+        assert c.get(i["src"]).status_code == 200
+    sw = c.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
+    assert 'rel="manifest"' in c.get("/").text
