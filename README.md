@@ -85,6 +85,13 @@ The suite covers every endpoint, concurrent users, parallel answers to one sessi
 ## Limits
 AI feedback and salary figures are estimates, not guarantees. The free demo host sleeps when idle and does not keep sessions across redeploys.
 
+## Security and privacy
+- **Secrets:** the Nebius key and database URL exist only as server environment variables. Nothing is hard-coded, `.env` and local databases are git-ignored, and the full git history was scanned for the key, the DB password and common token patterns (no hits). The model API is only ever called from the server; the browser never sees a key.
+- **Data flow:** resume, job description and answers are sent to Nebius Token Factory to produce the AI output, and nowhere else. Guest sessions are kept on the server for 2 days (so a mock interview can continue) and then purged. Accounts are optional: only email, a scrypt password hash and items the user explicitly saves are stored (Neon Postgres). "Delete account" removes the user and all saved history. The app writes no resume text, answers or emails to its logs, and no analytics or third-party trackers are used.
+- **Errors:** production responses never include stack traces, file paths or connection strings; unexpected errors return a generic message and only the exception type is logged. API docs are disabled.
+- **Abuse and spend protection:** per-IP per-minute limit on every endpoint, a per-IP daily cap on AI calls, a strict sign-up and login limit (plus a per-account lockout after 5 failed logins), a global daily ceiling on model calls (`LLM_DAILY_CAP`) and a max output size per call. Client IP is taken from the CDN header, not from spoofable headers.
+- **Authorization:** every history route is scoped by the logged-in user id in the SQL (`WHERE id=? AND user_id=?`), so changing an ID returns 404. Interview sessions use unguessable 96-bit IDs. Cookies are HttpOnly, SameSite=Lax, Secure on HTTPS. All SQL is parameterized. All model and user text is HTML-escaped before display, and the app sends CSP, X-Frame-Options, nosniff, Referrer-Policy and HSTS headers.
+
 ## Roadmap
 InterviewPilot is built for educated professionals in India and the US. The live app stays fully free and open (no payment, no paywall) through the hackathon judging period ending Dec 15, 2026.
 
@@ -98,6 +105,7 @@ Pricing rule (documentation only):
 - IP location is not a guarantee of physical location. This is an eligibility rule, not an anti-abuse guarantee; a small amount of VPN leakage is accepted at this scale.
 
 Business structure plan (documentation only): InterviewPilot stays the author's personal product, separate from any other company. Payments start with an individual (unregistered) Razorpay account for India and Lemon Squeezy for international customers. After roughly 100 paying customers, the author plans to register a One Person Company (OPC) and move the business under it.
+**Payment security rule (applies to the future paid plan):** every price calculation and all payment verification happens strictly on the server. The client only asks to start a checkout for a plan name; the server chooses the amount and currency, creates the Razorpay order or Lemon Squeezy checkout itself, and unlocks a plan only after verifying the Razorpay payment signature (HMAC-SHA256 of order id and payment id with the secret key) or the Lemon Squeezy webhook signature. Amounts, plan state and country are never trusted from the browser, webhooks are idempotent, and no card data ever touches our servers.
 
 ## License
 MIT. See [LICENSE](LICENSE).

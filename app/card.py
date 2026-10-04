@@ -16,7 +16,10 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 
 FONTS = os.path.join(os.path.dirname(__file__), "static", "fonts")
-_SECRET = (os.environ.get("CARD_SECRET") or os.environ.get("NEBIUS_API_KEY") or secrets.token_hex(16)).encode()
+import hashlib as _hl
+
+_raw = os.environ.get("CARD_SECRET") or os.environ.get("NEBIUS_API_KEY") or secrets.token_hex(16)
+_SECRET = _hl.sha256(b"interviewpilot-card-v1:" + _raw.encode()).digest()  # derived, never the raw API key
 
 
 def verdict(score: float) -> str:

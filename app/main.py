@@ -1,5 +1,6 @@
 import io
 import os
+import re
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
@@ -7,9 +8,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from app import accounts, bank, brief, builder, card, coding, companies, llm, prep, services, star
-from app.guard import RateLimiter, client_key, rate_limit
+from app.guard import FailLimiter, RateLimiter, client_key, rate_limit
 
-app = FastAPI(title="InterviewPilot")
+app = FastAPI(title="InterviewPilot", docs_url=None, redoc_url=None, openapi_url=None)
 
 # A future mobile shell or separate web front end can call the API cross-origin.
 # Set CORS_ORIGINS="https://app.example.com,capacitor://localhost" to enable; off by default.
@@ -21,8 +22,11 @@ if _origins:
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 MAX_UPLOAD = 5 * 1024 * 1024
 LIMITED = [Depends(rate_limit)]
+_signup_limiter = RateLimiter(limit=int(os.environ.get("SIGNUPS_PER_DAY", "10")), window=86400.0)
+_fail_limiter = FailLimiter(limit=5, window=600.0)
 _auth_limiter = RateLimiter(limit=int(os.environ.get("AUTH_RATE_PER_MIN", "10")), window=60.0)
 COOKIE = "ip_session"
+PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://interviewpilot-bdzx.onrender.com")
 
 
 def auth_limit(request: Request):
@@ -44,6 +48,33 @@ def need_user(request: Request):
 def _set_cookie(resp, request: Request, token: str):
     secure = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
     resp.set_cookie(COOKIE, token, max_age=accounts.SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=secure, path="/")
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    resp = await call_next(request)
+    h = resp.headers
+    h.setdefault("X-Content-Type-Options", "nosniff")
+    h.setdefault("X-Frame-Options", "DENY")
+    h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    h.setdefault("Permissions-Policy", "camera=(), geolocation=(), payment=(), microphone=(self)")
+    h.setdefault("Strict-Transport-Security", "max-age=31536000")
+    h.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "connect-src 'self'; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; "
+        "form-action 'self'; frame-ancestors 'none'",
+    )
+    return resp
+
+
+@app.exception_handler(Exception)
+async def unhandled(_: Request, exc: Exception):
+    # Never leak internals (paths, SQL, connection strings). The server log keeps the type only.
+    import logging
+
+    logging.getLogger("interviewpilot").error("Unhandled error: %s", type(exc).__name__)
+    return JSONResponse({"detail": "Something went wrong on our side. Please try again."}, status_code=500)
 
 
 @app.exception_handler(llm.LLMError)
@@ -345,7 +376,9 @@ def company_brief(body: BriefIn):
 
 def _base(request: Request) -> str:
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    host = request.headers.get("host") or request.url.netloc
+    if proto not in ("http", "https") or not re.fullmatch(r"[A-Za-z0-9.\-]{1,100}(:\d{1,5})?", host):
+        return PUBLIC_BASE
     return f"{proto}://{host}"
 
 
@@ -359,7 +392,7 @@ def make_card(sid: str, body: CardIn, request: Request):
     return {"url": f"{base}/c/{tok}", "image": f"{base}/c/{tok}.png", "score": p["s"], "verdict": card.verdict(p["s"])}
 
 
-@app.get("/c/{token}.png")
+@app.get("/c/{token}.png", dependencies=LIMITED)
 def card_png(token: str):
     p = card.verify(token)
     if not p:
@@ -367,7 +400,7 @@ def card_png(token: str):
     return Response(card.render_png(p), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
-@app.get("/c/{token}")
+@app.get("/c/{token}", dependencies=LIMITED)
 def card_page(token: str, request: Request):
     p = card.verify(token)
     if not p:
@@ -393,6 +426,8 @@ class SaveIn(BaseModel):
 
 @app.post("/api/auth/register", dependencies=[Depends(auth_limit)])
 def auth_register(body: AuthIn, request: Request):
+    if not _signup_limiter.check(client_key(request)):
+        raise HTTPException(429, "Too many sign-ups from this network today. Please try again later.")
     try:
         user, token = accounts.register(body.email, body.password)
     except ValueError as e:
@@ -404,16 +439,20 @@ def auth_register(body: AuthIn, request: Request):
 
 @app.post("/api/auth/login", dependencies=[Depends(auth_limit)])
 def auth_login(body: AuthIn, request: Request):
+    ek = "e:" + body.email.strip().lower()[:320]
+    if _fail_limiter.blocked(ek):
+        raise HTTPException(429, "Too many failed attempts for this account. Please wait 10 minutes.")
     try:
         user, token = accounts.login(body.email, body.password)
     except PermissionError as e:
+        _fail_limiter.fail(ek)
         raise HTTPException(401, str(e))
     resp = JSONResponse({"user": {"email": user["email"]}})
     _set_cookie(resp, request, token)
     return resp
 
 
-@app.post("/api/auth/logout")
+@app.post("/api/auth/logout", dependencies=LIMITED)
 def auth_logout(request: Request):
     accounts.logout(request.cookies.get(COOKIE))
     resp = JSONResponse({"ok": True})
@@ -421,13 +460,13 @@ def auth_logout(request: Request):
     return resp
 
 
-@app.get("/api/auth/me")
+@app.get("/api/auth/me", dependencies=LIMITED)
 def auth_me(request: Request):
     u = current_user(request)
     return {"user": {"email": u["email"]} if u else None, "persistent": accounts.using_postgres()}
 
 
-@app.delete("/api/auth/account")
+@app.delete("/api/auth/account", dependencies=LIMITED)
 def auth_delete(request: Request, u=Depends(need_user)):
     accounts.delete_account(u["id"])
     resp = JSONResponse({"ok": True})
@@ -435,7 +474,7 @@ def auth_delete(request: Request, u=Depends(need_user)):
     return resp
 
 
-@app.get("/api/history")
+@app.get("/api/history", dependencies=LIMITED)
 def history_list(u=Depends(need_user)):
     return {"items": accounts.list_items(u["id"])}
 
@@ -445,7 +484,7 @@ def history_save(body: SaveIn, u=Depends(need_user)):
     return _guard(accounts.save_item, u["id"], body.kind, body.title, body.data)
 
 
-@app.get("/api/history/{iid}")
+@app.get("/api/history/{iid}", dependencies=LIMITED)
 def history_get(iid: str, u=Depends(need_user)):
     item = accounts.get_item(u["id"], iid)
     if not item:
@@ -453,7 +492,7 @@ def history_get(iid: str, u=Depends(need_user)):
     return item
 
 
-@app.delete("/api/history/{iid}")
+@app.delete("/api/history/{iid}", dependencies=LIMITED)
 def history_delete(iid: str, u=Depends(need_user)):
     if not accounts.delete_item(u["id"], iid):
         raise HTTPException(404, "Not found")
@@ -473,7 +512,3 @@ def index():
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
-
-@app.get("/api/_dbg_ip")
-def _dbg_ip(request: Request):
-    return {"xff": request.headers.get("x-forwarded-for"), "host": request.client.host if request.client else None, "xri": request.headers.get("x-real-ip"), "cf": request.headers.get("cf-connecting-ip")}

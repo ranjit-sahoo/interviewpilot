@@ -2,6 +2,9 @@ import os
 
 os.environ.pop("NEBIUS_API_KEY", None)
 os.environ["RATE_LIMIT_PER_MIN"] = "100000"
+os.environ["AUTH_RATE_PER_MIN"] = "100000"
+os.environ["SIGNUPS_PER_DAY"] = "100000"
+os.environ["AI_DAILY_PER_IP"] = "100000"
 os.environ["INTERVIEWPILOT_DB"] = ":memory:"
 
 import tempfile
@@ -429,3 +432,61 @@ def test_company_brief_and_validation():
     assert d["summary"] and d["process"] and d["news_url"].startswith("https://news.google.com/search?q=Infosys")
     assert d["known_profile"] is True
     assert c.post("/api/company-brief", json={"company": " "}).status_code == 400
+
+
+def test_security_headers_and_no_docs():
+    r = c.get("/health")
+    assert r.headers["x-content-type-options"] == "nosniff"
+    assert r.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
+    assert c.get("/docs").status_code == 404
+    assert c.get("/openapi.json").status_code == 404
+
+
+def test_spoofed_forwarded_for_not_trusted():
+    from app.guard import client_key
+
+    class R:
+        def __init__(s, h):
+            s.headers, s.client = h, None
+
+    assert client_key(R({"cf-connecting-ip": "9.9.9.9", "x-forwarded-for": "1.1.1.1, 9.9.9.9, 2.2.2.2, 10.0.0.1"})) == "9.9.9.9"
+    assert client_key(R({"x-forwarded-for": "1.1.1.1, 9.9.9.9, 2.2.2.2, 10.0.0.1"})) == "9.9.9.9"
+
+
+def test_daily_model_budget(monkeypatch):
+    from app import llm
+
+    monkeypatch.setattr(llm, "DAILY_CAP", 0)
+    import pytest
+
+    with pytest.raises(llm.LLMError):
+        llm._budget()
+
+
+def test_fail_limiter():
+    from app.guard import FailLimiter
+
+    f = FailLimiter(3, 600)
+    for _ in range(3):
+        assert not f.blocked("a")
+        f.fail("a")
+    assert f.blocked("a") and not f.blocked("b")
+
+
+def test_bad_host_header_falls_back():
+    r = c.post("/api/session/none/card", json={"name": "x"}, headers={"host": "evil.com\"><script>"})
+    assert r.status_code in (404, 400, 422)
+
+
+def test_idor_history_and_unhandled_error():
+    a = TestClient(app)
+    b = TestClient(app)
+    a.post("/api/auth/register", json={"email": "ida@example.com", "password": "password123"})
+    rb = b.post("/api/auth/register", json={"email": "idb@example.com", "password": "password123"}); assert rb.status_code == 200, rb.text
+    iid = a.post("/api/history", json={"kind": "star", "title": "t", "data": {"x": 1}}).json()["id"]
+    assert a.get(f"/api/history/{iid}").status_code == 200
+    assert b.get(f"/api/history/{iid}").status_code == 404
+    assert b.delete(f"/api/history/{iid}").status_code == 404
+    assert a.get(f"/api/history/{iid}").status_code == 200
+    assert TestClient(app).get(f"/api/history/{iid}").status_code == 401

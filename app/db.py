@@ -5,7 +5,7 @@ import time
 import uuid
 
 DB_PATH = os.environ.get("INTERVIEWPILOT_DB", "interviewpilot.sqlite3")
-TTL_SECONDS = 7 * 24 * 3600
+TTL_SECONDS = 2 * 24 * 3600  # guest sessions hold resume text; keep it short
 
 
 def _conn():
@@ -20,7 +20,7 @@ def _conn():
 
 
 def create(data: dict) -> str:
-    sid = uuid.uuid4().hex[:12]
+    sid = uuid.uuid4().hex[:24]
     now = time.time()
     with _conn() as c:
         c.execute("INSERT INTO sessions (id, data, created) VALUES (?, ?, ?)", (sid, json.dumps(data), now))

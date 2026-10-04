@@ -26,6 +26,28 @@ class LLMError(RuntimeError):
 _SLOTS = threading.BoundedSemaphore(int(os.environ.get("LLM_CONCURRENCY", "8")))
 
 
+# Hard daily ceiling on model calls for the whole app (spend protection). Resets at UTC midnight.
+DAILY_CAP = int(os.environ.get("LLM_DAILY_CAP", "4000"))
+_day = {"d": None, "n": 0}
+_day_lock = threading.Lock()
+
+
+def _budget():
+    import time
+
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    with _day_lock:
+        if _day["d"] != today:
+            _day["d"], _day["n"] = today, 0
+        if _day["n"] >= DAILY_CAP:
+            raise LLMError("daily model budget reached")
+        _day["n"] += 1
+
+
+def calls_today() -> int:
+    return _day["n"]
+
+
 def mock_mode() -> bool:
     return not os.environ.get("NEBIUS_API_KEY")
 
@@ -37,6 +59,8 @@ def _client():
 
 
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
+    _budget()
+    kw.setdefault("max_tokens", int(os.environ.get("LLM_MAX_TOKENS", "8000")))
     if model == FAST_MODEL and os.environ.get("FAST_THINKING") != "1":
         # Nano can spend 30+ seconds "thinking" before a short JSON answer. Turning it off is about 20x faster.
         kw = {**kw, "extra_body": {"chat_template_kwargs": {"enable_thinking": False}}}

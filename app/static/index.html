@@ -297,7 +297,7 @@ $('cpEval').onclick=()=>busy($('cpEval'),'Reviewing...',async()=>{
   $('cpErr').textContent='';$('cpOut').innerHTML='';
   try{const r=await post('/api/coding/problems/'+cpId+'/evaluate',{language:$('cpLang').value,code:$('cpCode').value});
     const vt={correct:'Looks correct',partially_correct:'Partly correct',incorrect:'Needs work'}[r.verdict];
-    $('cpOut').innerHTML=`<div class="score">${r.score}/10</div><h3>${esc(vt)}</h3><p>${esc(r.summary)}</p>`+
+    $('cpOut').innerHTML=`<div class="score">${esc(r.score)}/10</div><h3>${esc(vt)}</h3><p>${esc(r.summary)}</p>`+
       (r.bugs.length?'<h4>Bugs and missed cases</h4>'+ul(r.bugs):'')+
       `<h4>Complexity</h4><p>Time ${esc(r.complexity.time)}, space ${esc(r.complexity.space)}. ${r.complexity.optimal?'Optimal.':'Can be improved.'} ${esc(r.complexity.note)}</p>`+
       (r.better_approach?`<h4>Better approach</h4><p>${esc(r.better_approach)}</p>`:'')+
@@ -410,7 +410,7 @@ $('histList').onclick=async e=>{const d=e.target.dataset||{};
     else if(it.kind==='resume'){RB=Object.assign(RB_EMPTY(),x);rbFormRender();document.querySelector('[data-t=builder]').click()}
     else if(it.kind==='star'){$('histView').innerHTML='<div class="starOut">'+starHtml(x)+'</div>';starBind(x)}
     else if(it.kind==='brief'){$('histView').innerHTML=briefHtml(x)}
-    else if(it.kind==='code_review'){$('histView').innerHTML=`<h3>${esc(it.title)}</h3><div class="score">${x.result.score}/10</div><p>${esc(x.result.summary)}</p>`+(x.result.bugs.length?ul(x.result.bugs):'')+`<pre style="white-space:pre-wrap;background:var(--card2);padding:10px;border-radius:10px">${esc(x.code)}</pre>`}
+    else if(it.kind==='code_review'){$('histView').innerHTML=`<h3>${esc(it.title)}</h3><div class="score">${esc(x.result.score)}/10</div><p>${esc(x.result.summary)}</p>`+(x.result.bugs.length?ul(x.result.bugs):'')+`<pre style="white-space:pre-wrap;background:var(--card2);padding:10px;border-radius:10px">${esc(x.code)}</pre>`}
     else $('histView').innerHTML=`<pre style="white-space:pre-wrap">${esc(JSON.stringify(x,null,2))}</pre>`}catch(er){alert(er.message)}}};
 $('histDel').onclick=async()=>{if(!confirm('Delete your account and everything saved? This cannot be undone.'))return;
   try{await api('/api/auth/account',{method:'DELETE'});await refreshMe();document.querySelector('[data-t=prep]').click()}catch(e){alert(e.message)}};
@@ -556,7 +556,7 @@ const briefHtml=d=>`<h2>${esc(d.company)} <span class="pill">${esc(d.country)} v
   ${sec('Interview process',d.process.length?'<ol>'+d.process.map(x=>`<li>${esc(x)}</li>`).join('')+'</ol>':'')}${sec('What they ask',ul(d.question_style))}
   ${sec('Culture',ul(d.culture))}${sec('Recent focus areas',ul(d.recent_focus))}
   ${d.why_join?`<div class="w g"><b>Your "why this company" angle</b><br>${esc(d.why_join)}</div>`:''}${sec('Smart questions to ask them',ul(d.ask_them))}${sec('Avoid these mistakes',ul(d.watch_out))}
-  <p class="note">${esc(d.caution)} <a href="${esc(d.news_url)}" target="_blank" rel="noopener">See the latest news</a></p><p><button class="ghost" data-save="brief">Save to my history</button></p>`;
+  <p class="note">${esc(d.caution)} <a href="${esc(/^https:\/\//.test(d.news_url||"")?d.news_url:"#")}" target="_blank" rel="noopener">See the latest news</a></p><p><button class="ghost" data-save="brief">Save to my history</button></p>`;
 $('btnBrief').onclick=()=>busy($('btnBrief'),'Researching...',async()=>{$('briefErr').textContent='';
   try{const d=await post('/api/company-brief',{company:$('bfCo').value,role:$('bfRole').value||$('role').value,country:country||'US'});lastBrief=d;$('briefOut').innerHTML=briefHtml(d)}catch(e){$('briefErr').textContent=e.message}});
 

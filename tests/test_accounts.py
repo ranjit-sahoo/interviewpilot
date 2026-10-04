@@ -5,6 +5,8 @@ os.environ.pop("NEBIUS_API_KEY", None)
 os.environ.pop("DATABASE_URL", None)
 os.environ["RATE_LIMIT_PER_MIN"] = "100000"
 os.environ["AUTH_RATE_PER_MIN"] = "100000"
+os.environ["SIGNUPS_PER_DAY"] = "100000"
+os.environ["AI_DAILY_PER_IP"] = "100000"
 os.environ["INTERVIEWPILOT_DB"] = os.path.join(tempfile.mkdtemp(), "acc.sqlite3")
 
 from fastapi.testclient import TestClient
