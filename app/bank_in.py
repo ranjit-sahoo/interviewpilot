@@ -3,16 +3,6 @@ Rows: (type, level, question, how to answer)
 """
 
 ROLES = {
-    "Customer Support (BPO)": [
-        ("behavioral", "easy", "Why do you want to work in customer support?", "Say you like solving problems and talking to people. Mention patience and clear speaking. Avoid saying 'just for a job'."),
-        ("technical", "easy", "What is the difference between a voice process and a non-voice (chat or email) process?", "Voice: live calls, accent and tone matter. Non-voice: typing speed, grammar, multitasking chats. Say which you prefer and why."),
-        ("scenario", "medium", "A customer is shouting at you about a wrong bill. What do you do?", "Stay calm, let them finish, apologize for the trouble, take ownership, check the bill, offer a fix, confirm they are satisfied."),
-        ("scenario", "medium", "You do not know the answer to a customer's question. What now?", "Be honest, say you will check, use the knowledge base or ask a senior, never guess, update the customer in time."),
-        ("technical", "medium", "How do you handle a call when the customer cannot understand your accent or speaks a different language?", "Slow down, simple words, confirm understanding, offer to transfer to a language-matched agent."),
-        ("behavioral", "medium", "Are you comfortable with night shifts, rotational shifts and targets?", "Be honest. Show you understand AHT, CSAT and quality scores, and how you will stay healthy and consistent."),
-        ("technical", "medium", "What do AHT, CSAT and FCR mean?", "Average handle time, customer satisfaction, first contact resolution. Say balance speed and quality."),
-        ("scenario", "hard", "A customer asks for a refund your policy does not allow. How do you respond?", "Empathize, explain the policy simply, offer the best allowed option, escalate if needed, never promise what you cannot give."),
-    ],
     "Sales / Business Development Executive": [
         ("behavioral", "easy", "Tell me about yourself and why sales?", "Short story, show energy and target mindset, link any college or part-time selling experience."),
         ("technical", "easy", "What is the difference between a lead, a prospect and a customer?", "Lead: possible interest. Prospect: qualified and fits. Customer: bought. Mention qualifying with budget, need and timeline."),
@@ -106,7 +96,6 @@ ROLES = {
 }
 
 ALIASES = {
-    "Customer Support (BPO)": ["bpo", "customer support", "customer service", "call center", "call centre", "voice process", "non voice", "non-voice", "chat support", "customer care", "helpdesk", "help desk"],
     "Sales / Business Development Executive": ["sales", "business development", "bde", "telecaller", "tele caller", "inside sales", "relationship manager", "lead generation"],
     "Digital Marketing Executive": ["digital marketing", "seo", "social media", "performance marketing", "content marketing", "marketing executive", "ppc"],
     "HR Executive": ["human resource", "hr executive", "hr recruiter", "hr generalist", "talent acquisition", "hr manager", "hr intern"],
