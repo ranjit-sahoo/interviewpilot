@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import llm, services
+from app import bank, llm, services
 from app.guard import rate_limit
 
 app = FastAPI(title="InterviewPilot")
@@ -188,6 +188,32 @@ def screen(body: ScreenIn):
     return _guard(
         services.screen_candidates, [c.model_dump() for c in body.candidates], _need_role(body.role), body.jd, body.country
     )
+
+
+class BankIn(BaseModel):
+    role: str = Field("", max_length=200)
+    company: str = Field("", max_length=80)
+    country: str = "US"
+
+
+@app.get("/api/bank/roles")
+def bank_roles():
+    return {"roles": bank.roles()}
+
+
+@app.post("/api/bank", dependencies=LIMITED)
+def question_bank(body: BankIn):
+    """Curated role questions (instant) plus optional AI company-specific questions."""
+    if not body.role.strip() and not body.company.strip():
+        raise HTTPException(400, "Enter a role or a company.")
+    out = bank.curated(body.role)
+    out["company"] = None
+    if body.company.strip():
+        try:
+            out["company"] = bank.company_questions(body.company, body.role, body.country)
+        except llm.LLMError:
+            out["company_error"] = "Company-specific questions are unavailable right now. Showing the role bank."
+    return out
 
 
 @app.get("/sw.js")

@@ -73,7 +73,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 
 <div class="tabs" id="tabs" role="tablist">
   <button data-t="review" class="on">Resume Review</button><button data-t="match">JD Match</button>
-  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="recruiter">Recruiter Mode</button>
+  <button data-t="interview">Mock Interview</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="recruiter">Recruiter Mode</button>
 </div>
 
 <section id="t-review" class="card"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
@@ -114,6 +114,16 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <div id="negoErr" class="err" role="alert"></div><div id="negoRep"></div>
 </section>
 
+<section id="t-bank" class="card hide">
+  <p class="note">Common questions for your role, with how to answer them. Add a company to get questions in its style.</p>
+  <label for="bankRole">Role</label><input type="text" id="bankRole" list="bankRoles" maxlength="200" placeholder="Pick or type a role">
+  <datalist id="bankRoles"></datalist>
+  <label for="bankCo">Company (optional)</label><input type="text" id="bankCo" maxlength="80" placeholder="e.g. Infosys, Google, Deloitte">
+  <button id="btnBank" class="alt">Show questions</button>
+  <div id="bankErr" class="err" role="alert"></div>
+  <div id="bankCoOut"></div><div class="chips" id="bankFilter" role="group" aria-label="Filter"></div><div id="bankOut"></div>
+</section>
+
 <section id="t-recruiter" class="card hide">
   <p class="note">Paste or upload several candidate resumes. InterviewPilot screens each against the role and job description above and ranks them with suggested phone-screen questions. Up to 10 candidates.</p>
   <div id="cands"></div><button id="btnAddCand" class="ghost">+ Add candidate</button>
@@ -145,7 +155,32 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  ['review','match','interview','nego','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));profErr('')};
+  ['review','match','interview','nego','bank','recruiter'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));profErr('')};
+
+// ---- question bank
+let bankAll=[],bankFilter='all';
+fetch('/api/bank/roles').then(r=>r.json()).then(j=>{$('bankRoles').innerHTML=j.roles.map(r=>`<option value="${esc(r)}">`).join('')}).catch(()=>{});
+function bankCard(q){return `<div class="cand"><span class="pill">${esc(q.type)}</span><span class="pill">${esc(q.level)}</span><p><b>${esc(q.question)}</b></p>${q.hint?`<details><summary>How to answer</summary><p>${esc(q.hint)}</p></details>`:''}</div>`}
+function bankRender(){
+  const shown=bankAll.filter(q=>bankFilter==='all'||q.type===bankFilter);
+  $('bankOut').innerHTML=shown.length?shown.map(bankCard).join(''):'<p class="note">No questions in this filter.</p>';
+  document.querySelectorAll('#bankFilter button').forEach(b=>b.classList.toggle('on',b.dataset.f===bankFilter));
+}
+$('bankFilter').onclick=e=>{if(e.target.dataset.f){bankFilter=e.target.dataset.f;bankRender()}};
+$('btnBank').onclick=()=>busy($('btnBank'),'Loading...',async()=>{
+  $('bankErr').textContent='';
+  try{
+    const r=($('bankRole').value||$('role').value).trim(),co=$('bankCo').value.trim();
+    const d=await post('/api/bank',{role:r,company:co,country:country||'US'});
+    let html='';
+    if(d.company_error)html+=`<p class="note">${esc(d.company_error)}</p>`;
+    if(d.company)html+=`<h3>${esc(d.company.company)} style</h3><p class="note">${esc(d.company.note)}</p>`+d.company.questions.map(bankCard).join('')+`<h3>${esc(d.role)} questions</h3>`;
+    $('bankCoOut').innerHTML=html;
+    bankAll=d.questions;bankFilter='all';
+    $('bankFilter').innerHTML=['all','technical','behavioral','scenario'].map(f=>`<button data-f="${f}">${f}</button>`).join('');
+    bankRender();
+  }catch(e){$('bankErr').textContent=e.message}
+});
 
 // ---- country
 function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}

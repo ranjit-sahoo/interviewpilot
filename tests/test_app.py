@@ -186,3 +186,45 @@ def test_pwa_assets():
     sw = c.get("/sw.js")
     assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]
     assert 'rel="manifest"' in c.get("/").text
+
+
+def test_bank_roles_and_curated():
+    assert "QA Automation Engineer" in c.get("/api/bank/roles").json()["roles"]
+    d = c.post("/api/bank", json={"role": "Selenium test engineer"}).json()
+    assert d["matched"] and d["role"] == "QA Automation Engineer"
+    assert len(d["questions"]) >= 10 and {"type", "level", "question", "hint"} <= set(d["questions"][0])
+    assert d["company"] is None
+
+
+def test_bank_unknown_role_falls_back_to_general():
+    d = c.post("/api/bank", json={"role": "Astronaut"}).json()
+    assert d["matched"] is False and d["role"] == "General" and d["questions"]
+
+
+def test_bank_company_questions_cached_and_validated(monkeypatch):
+    from app import bank
+
+    bank._cache.clear()
+    d = c.post("/api/bank", json={"role": "Java Developer", "company": "Acme Corp"}).json()
+    assert d["company"]["company"] == "Acme Corp" and d["company"]["questions"]
+    calls = []
+    monkeypatch.setattr(llm, "chat_json", lambda *a, **k: calls.append(1) or {"questions": []})
+    c.post("/api/bank", json={"role": "Java Developer", "company": "Acme Corp"})
+    assert calls == []  # served from cache
+
+
+def test_bank_company_failure_degrades(monkeypatch):
+    from app import bank
+
+    bank._cache.clear()
+
+    def boom(*a, **k):
+        raise llm.LLMError("x")
+
+    monkeypatch.setattr(llm, "chat_json", boom)
+    r = c.post("/api/bank", json={"role": "Python Developer", "company": "Zeta"})
+    assert r.status_code == 200 and r.json()["company"] is None and r.json()["company_error"]
+
+
+def test_bank_needs_input():
+    assert c.post("/api/bank", json={}).status_code == 400

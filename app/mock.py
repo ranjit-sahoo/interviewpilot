@@ -28,6 +28,15 @@ def reply(task: str, user: str):
                 {"before": "Worked on testing of applications", "after": "Executed 120+ regression test cases per release in Selenium, reducing escaped defects by 25%"}
             ],
         }
+    if task == "company_bank":
+        return {
+            "note": "Offline sample: generic questions for this role.",
+            "questions": [
+                {"type": "technical", "level": "medium", "question": "Walk me through the most complex system you worked on and your exact part in it.", "hint": "Scope, your decisions, result with a number."},
+                {"type": "behavioral", "level": "easy", "question": "Why do you want to work here?", "hint": "Two specific reasons about the product or mission."},
+                {"type": "scenario", "level": "hard", "question": "A key deliverable is at risk the day before launch. What do you do?", "hint": "Assess, communicate early, give options."},
+            ],
+        }
     if task == "questions":
         return {
             "questions": [
