@@ -85,12 +85,13 @@ AI feedback and salary figures are estimates, not guarantees. The free demo host
 ## Roadmap
 InterviewPilot is built for educated professionals in India and the US. The live app stays fully free and open (no payment, no paywall) through the hackathon judging period ending Dec 15, 2026.
 
-Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs, priced by the user's country: Rs 499 per year for India and $49 per year for the US. Not built yet; no payment code exists in this repository.
+Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs. Not built yet; no payment code exists in this repository.
 
-Anti-abuse plan for pricing (documentation only, not built): the pricing country is never chosen by the user.
-1. The price shown is decided automatically from the visitor's IP geolocation.
-2. At payment time the card issuing country must match the price tier: the India tier needs an Indian-issued card (for example Razorpay for INR), the US tier is charged in USD (for example Stripe).
-3. A small amount of VPN leakage is acceptable at this scale; the card check closes the main loophole.
+Pricing rule (documentation only):
+- Rs 499 per year for visitors with an India IP address. $49 per year for every other country (US, UK, UAE, Canada and anywhere else).
+- The pricing country is never chosen by the user. IP geolocation alone sets the price shown.
+- The Rs 499 tier also requires an Indian-issued card at payment (for example Razorpay for INR). The card check only protects the India tier. Indians living abroad pay $49 (for example via Stripe).
+- A small amount of VPN leakage is acceptable at this scale.
 
 ## License
 MIT. See [LICENSE](LICENSE).
