@@ -472,3 +472,8 @@ def index():
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
+
+
+@app.get("/api/_dbg_ip")
+def _dbg_ip(request: Request):
+    return {"xff": request.headers.get("x-forwarded-for"), "host": request.client.host if request.client else None, "xri": request.headers.get("x-real-ip"), "cf": request.headers.get("cf-connecting-ip")}
