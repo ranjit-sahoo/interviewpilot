@@ -193,6 +193,7 @@ def _screen_one(cand: dict, role: str, jd: str, country: str) -> dict:
             "recruiter", _sys(prompts.RECRUITER_SYSTEM, country), _ctx(cand["resume"], role, jd), model=llm.FAST_MODEL
         )
         r["score"] = max(0, min(100, int(r.get("score", 0))))
+        r["recommendation"] = "advance" if r["score"] >= 70 else "maybe" if r["score"] >= 50 else "reject"
         return {"name": name, "ok": True, **r}
     except (llm.LLMError, ValueError, TypeError):
         return {"name": name, "ok": False, "error": "Could not screen this candidate. Try again."}
