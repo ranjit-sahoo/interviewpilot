@@ -37,11 +37,22 @@ def _client():
 
 
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
+    if model == FAST_MODEL and os.environ.get("FAST_THINKING") != "1":
+        # Nano can spend 30+ seconds "thinking" before a short JSON answer. Turning it off is about 20x faster.
+        kw = {**kw, "extra_body": {"chat_template_kwargs": {"enable_thinking": False}}}
     try:
         with _SLOTS:
             resp = _client().chat.completions.create(model=model, messages=messages, **kw)
     except Exception as e:  # network, auth, rate limit, timeout
-        raise LLMError(f"model call failed: {type(e).__name__}") from e
+        if "extra_body" in kw and getattr(e, "status_code", None) == 400:
+            kw = {k: v for k, v in kw.items() if k != "extra_body"}
+            try:
+                with _SLOTS:
+                    resp = _client().chat.completions.create(model=model, messages=messages, **kw)
+            except Exception as e2:
+                raise LLMError(f"model call failed: {type(e2).__name__}") from e2
+        else:
+            raise LLMError(f"model call failed: {type(e).__name__}") from e
     return resp.choices[0].message.content or ""
 
 
