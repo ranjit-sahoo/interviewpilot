@@ -6,7 +6,7 @@ Nemotron model, cached in memory, and fall back to the curated set if the model 
 import threading
 
 from app import llm, market
-from app import bank_us
+from app import bank_in, bank_us
 
 # (type, level, question, how to answer)
 _B = {
@@ -121,6 +121,7 @@ _B = {
 }
 
 _B.update(bank_us.ROLES)
+_B.update(bank_in.ROLES)
 
 GENERAL = [
     ("behavioral", "easy", "Tell me about yourself.", "Present, past, future in about 90 seconds, tied to this role."),
@@ -145,6 +146,7 @@ _ALIASES = {
 }
 
 _ALIASES.update(bank_us.ALIASES)
+_ALIASES.update(bank_in.ALIASES)
 
 
 def roles() -> list[str]:

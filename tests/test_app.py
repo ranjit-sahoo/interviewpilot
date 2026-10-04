@@ -342,3 +342,14 @@ def test_us_market_roles_and_matching():
     assert bank.match_role("cloud engineer") == "AWS Cloud Engineer"
     for r in rs:
         assert len(bank.curated(r)["questions"]) >= 15
+
+
+def test_india_market_roles():
+    from app import bank
+    rs = bank.roles()
+    assert len(rs) == 30
+    for r in ["Customer Support (BPO)", "Accountant (Tally)", "Banking Operations", "UI/UX Designer"]:
+        assert r in rs
+        assert len([q for q in bank.curated(r)["questions"]]) >= 15
+    assert bank.match_role("voice process executive") == "Customer Support (BPO)"
+    assert bank.match_role("tally accountant") == "Accountant (Tally)"
