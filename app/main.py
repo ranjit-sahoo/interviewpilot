@@ -6,8 +6,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import bank, builder, coding, companies, llm, prep, services
-from app.guard import rate_limit
+from app import accounts, bank, builder, coding, companies, llm, prep, services
+from app.guard import RateLimiter, client_key, rate_limit
 
 app = FastAPI(title="InterviewPilot")
 
@@ -21,6 +21,29 @@ if _origins:
 STATIC = os.path.join(os.path.dirname(__file__), "static")
 MAX_UPLOAD = 5 * 1024 * 1024
 LIMITED = [Depends(rate_limit)]
+_auth_limiter = RateLimiter(limit=int(os.environ.get("AUTH_RATE_PER_MIN", "10")), window=60.0)
+COOKIE = "ip_session"
+
+
+def auth_limit(request: Request):
+    if not _auth_limiter.check(client_key(request)):
+        raise HTTPException(429, "Too many attempts. Please wait a minute and try again.")
+
+
+def current_user(request: Request):
+    return accounts.user_for(request.cookies.get(COOKIE))
+
+
+def need_user(request: Request):
+    u = current_user(request)
+    if not u:
+        raise HTTPException(401, "Please log in to use saved history.")
+    return u
+
+
+def _set_cookie(resp, request: Request, token: str):
+    secure = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+    resp.set_cookie(COOKIE, token, max_age=accounts.SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=secure, path="/")
 
 
 @app.exception_handler(llm.LLMError)
@@ -290,6 +313,86 @@ def prep_coding(body: StartIn):
 @app.get("/api/companies")
 def company_list():
     return {"companies": companies.names()}
+
+
+class AuthIn(BaseModel):
+    email: str = Field(max_length=320)
+    password: str = Field(max_length=200)
+
+
+class SaveIn(BaseModel):
+    kind: str = Field(max_length=30)
+    title: str = Field("", max_length=200)
+    data: dict | list
+
+
+@app.post("/api/auth/register", dependencies=[Depends(auth_limit)])
+def auth_register(body: AuthIn, request: Request):
+    try:
+        user, token = accounts.register(body.email, body.password)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    resp = JSONResponse({"user": {"email": user["email"]}})
+    _set_cookie(resp, request, token)
+    return resp
+
+
+@app.post("/api/auth/login", dependencies=[Depends(auth_limit)])
+def auth_login(body: AuthIn, request: Request):
+    try:
+        user, token = accounts.login(body.email, body.password)
+    except PermissionError as e:
+        raise HTTPException(401, str(e))
+    resp = JSONResponse({"user": {"email": user["email"]}})
+    _set_cookie(resp, request, token)
+    return resp
+
+
+@app.post("/api/auth/logout")
+def auth_logout(request: Request):
+    accounts.logout(request.cookies.get(COOKIE))
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(COOKIE, path="/")
+    return resp
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request):
+    u = current_user(request)
+    return {"user": {"email": u["email"]} if u else None, "persistent": accounts.using_postgres()}
+
+
+@app.delete("/api/auth/account")
+def auth_delete(request: Request, u=Depends(need_user)):
+    accounts.delete_account(u["id"])
+    resp = JSONResponse({"ok": True})
+    resp.delete_cookie(COOKIE, path="/")
+    return resp
+
+
+@app.get("/api/history")
+def history_list(u=Depends(need_user)):
+    return {"items": accounts.list_items(u["id"])}
+
+
+@app.post("/api/history", dependencies=LIMITED)
+def history_save(body: SaveIn, u=Depends(need_user)):
+    return _guard(accounts.save_item, u["id"], body.kind, body.title, body.data)
+
+
+@app.get("/api/history/{iid}")
+def history_get(iid: str, u=Depends(need_user)):
+    item = accounts.get_item(u["id"], iid)
+    if not item:
+        raise HTTPException(404, "Not found")
+    return item
+
+
+@app.delete("/api/history/{iid}")
+def history_delete(iid: str, u=Depends(need_user)):
+    if not accounts.delete_item(u["id"], iid):
+        raise HTTPException(404, "Not found")
+    return {"ok": True}
 
 
 @app.get("/sw.js")
