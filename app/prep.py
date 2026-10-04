@@ -10,11 +10,10 @@ from concurrent.futures import ThreadPoolExecutor
 from app import llm, market
 
 CORE_SYSTEM = """You are a senior interviewer and coach. {market}
-Using ONLY the candidate's resume, target role and job description (if given), write exactly 8 likely interview
-questions for THIS candidate and role: 4 technical (about their real stack and the JD's requirements), 2 behavioral
-and 2 scenario questions. Order easy to hard. For each, write a model answer the candidate could say, built from their
+Using ONLY the candidate's resume, target role and job description (if given), write exactly {spec}
+questions for THIS candidate and role, easy to hard. For each, write a model answer the candidate could say, built from their
 own experience (never invent employers, projects or numbers; if a detail is missing use a short placeholder like [X]).
-Model answers: 3-6 sentences, spoken style, with STAR structure for behavioral ones.
+Model answers: 3-5 sentences, spoken style, with STAR structure for behavioral ones.
 Also set "coding": true if the role or resume is a software, data, QA-automation or other coding-heavy profile.
 Return ONLY JSON:
 {{"coding": bool, "focus": [str] (3-5 topics the JD stresses that they should revise),
@@ -42,8 +41,14 @@ def _ctx(resume, role, jd):
     return s
 
 
-def _core(resume, role, jd, country):
-    out = llm.chat_json("prep_core", CORE_SYSTEM.format(market=market.context(country)), _ctx(resume, role, jd), model=llm.FAST_MODEL)
+SPECS = (
+    "4 technical questions (about their real stack and the JD's requirements)",
+    "2 behavioral questions and 2 scenario questions (client, deadline, conflict situations)",
+)
+
+
+def _core(resume, role, jd, country, spec):
+    out = llm.chat_json("prep_core", CORE_SYSTEM.format(market=market.context(country), spec=spec), _ctx(resume, role, jd), model=llm.FAST_MODEL)
     qs = []
     for q in out.get("questions", [])[:10] if isinstance(out.get("questions"), list) else []:
         if isinstance(q, dict) and q.get("question"):
@@ -74,27 +79,50 @@ def _code(resume, role, jd, country):
     return res
 
 
-def build(resume: str, role: str, jd: str, country: str) -> dict:
-    key = hashlib.sha256("\x00".join([market.normalize(country), role.strip().lower(), resume.strip(), jd.strip()]).encode()).hexdigest()
+def _key(prefix, resume, role, jd, country):
+    return prefix + hashlib.sha256("\x00".join([market.normalize(country), role.strip().lower(), resume.strip(), jd.strip()]).encode()).hexdigest()
+
+
+def _get(key):
     with _lock:
-        if key in _cache:
-            return _cache[key]
-    # Start the coding call in parallel only when the resume/role looks technical, to avoid wasted spend.
-    maybe_code = market.looks_technical(role, resume)
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        f_core = ex.submit(_core, resume, role, jd, country)
-        f_code = ex.submit(_code, resume, role, jd, country) if maybe_code else None
-        coding, focus, qs = f_core.result()
-        code_qs = []
-        if f_code is not None:
-            try:
-                code_qs = f_code.result()
-            except llm.LLMError:
-                code_qs = []  # the core pack is still useful
-    res = {"country": market.normalize(country), "coding_profile": coding or bool(code_qs), "focus": focus,
-           "questions": qs, "coding_questions": code_qs if (coding or code_qs) else []}
+        return _cache.get(key)
+
+
+def _put(key, val):
     with _lock:
         if len(_cache) >= _MAX:
             _cache.clear()
-        _cache[key] = res
+        _cache[key] = val
+
+
+def build(resume: str, role: str, jd: str, country: str) -> dict:
+    """Core pack: two parallel Nano calls (technical / behavioral+scenario). Coding questions load separately."""
+    key = _key("core:", resume, role, jd, country)
+    if (hit := _get(key)) is not None:
+        return hit
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        fa, fb = (ex.submit(_core, resume, role, jd, country, sp) for sp in SPECS)
+        try:
+            ca, focus, qa = fa.result()
+        except llm.LLMError:
+            ca, focus, qa = False, [], []
+        try:
+            cb, focus_b, qb = fb.result()
+        except llm.LLMError:
+            cb, focus_b, qb = False, [], []
+    qs = qa + qb
+    if not qs:
+        raise llm.LLMError("no questions returned")
+    res = {"country": market.normalize(country), "coding_profile": bool(ca or cb or market.looks_technical(role, resume)),
+           "focus": (focus or focus_b)[:5], "questions": qs}
+    _put(key, res)
+    return res
+
+
+def build_coding(resume: str, role: str, jd: str, country: str) -> dict:
+    key = _key("code:", resume, role, jd, country)
+    if (hit := _get(key)) is not None:
+        return hit
+    res = {"coding_questions": _code(resume, role, jd, country)}
+    _put(key, res)
     return res

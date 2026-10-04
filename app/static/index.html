@@ -320,7 +320,7 @@ rbFormRender();
 // ---- interview prep pack (hero)
 const qCard=(q,i)=>`<div class="cand"><span class="pill">${esc(q.type)}</span><p><b>${i+1}. ${esc(q.question)}</b></p>${q.why_asked?`<div class="note">Why they ask: ${esc(q.why_asked)}</div>`:''}<details><summary>Model answer</summary><p>${esc(q.model_answer)}</p></details></div>`;
 const cCard=q=>`<div class="cand"><span class="pill">${esc(q.level)}</span><span class="pill">${esc(q.language)}</span><p><b>${esc(q.title)}</b></p><p>${esc(q.problem)}</p><details><summary>Approach and solution</summary><p>${esc(q.approach)}</p><pre style="white-space:pre-wrap;background:var(--card2);padding:10px;border-radius:10px;overflow-x:auto">${esc(q.solution)}</pre><div class="note">${esc(q.complexity)}</div></details></div>`;
-$('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10-20 s)...',async()=>{
+$('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10 s)...',async()=>{
   $('prepErr').textContent='';$('prepOut').innerHTML='';
   try{const r=resumeText(),ro=role(),jd=$('jd').value.trim();
     if(!countryTouched&&!country)await detect();
@@ -328,8 +328,11 @@ $('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10-20 s)..
     let h=`<div class="note">Tailored for the ${esc(d.country)} market${jd?' and your job description':''}.</div>`;
     if(d.focus.length)h+='<h3>Revise these first</h3>'+ul(d.focus);
     h+='<h3>Likely questions with model answers</h3>'+d.questions.map(qCard).join('');
-    if(d.coding_questions.length)h+='<h3>Coding questions for your profile</h3>'+d.coding_questions.map(cCard).join('')+'<p><button class="ghost" id="prepToCode">Practice coding with AI review</button></p>';
-    $('prepOut').innerHTML=h;const b=$('prepToCode');if(b)b.onclick=()=>document.querySelector('[data-t=code]').click();
+    if(d.coding_profile)h+='<div id="prepCode"><h3>Coding questions for your profile</h3><p class="note">Preparing coding questions...</p></div>';
+    $('prepOut').innerHTML=h;
+    if(d.coding_profile)post('/api/prep/coding',{resume:r,role:ro,jd,country:country||'US'}).then(c=>{const el=$('prepCode');if(!el)return;
+      el.innerHTML='<h3>Coding questions for your profile</h3>'+(c.coding_questions.length?c.coding_questions.map(cCard).join('')+'<p><button class="ghost" id="prepToCode">Practice coding with AI review</button></p>':'<p class="note">Could not prepare coding questions right now. Try the Coding Practice tab.</p>');
+      const b=$('prepToCode');if(b)b.onclick=()=>document.querySelector('[data-t=code]').click()}).catch(()=>{const el=$('prepCode');if(el)el.innerHTML='<h3>Coding questions</h3><p class="note">Could not load coding questions right now. Try the Coding Practice tab.</p>'});
   }catch(e){$('prepErr').textContent=e.message}});
 
 // ---- country

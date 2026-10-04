@@ -283,7 +283,9 @@ def test_builder_polish_misaligned_model_output_is_ignored(monkeypatch):
 def test_prep_pack_has_model_answers_and_coding():
     d = c.post("/api/prep", json={"resume": RESUME, "role": "QA Automation Engineer", "jd": "Selenium, Java, CI", "country": "US"}).json()
     assert d["questions"] and all(q["model_answer"] for q in d["questions"])
-    assert d["coding_profile"] is True and d["coding_questions"] and d["coding_questions"][0]["solution"]
+    assert d["coding_profile"] is True and len(d["questions"]) >= 2
+    cq = c.post("/api/prep/coding", json={"resume": RESUME, "role": "QA Automation Engineer", "jd": "Selenium", "country": "US"}).json()
+    assert cq["coding_questions"] and cq["coding_questions"][0]["solution"]
     assert c.post("/api/prep", json={"resume": "hi", "role": "QA"}).status_code == 400
     assert c.post("/api/prep", json={"resume": RESUME, "role": ""}).status_code == 400
 
@@ -301,7 +303,7 @@ def test_prep_skips_coding_call_for_non_technical(monkeypatch):
 
     monkeypatch.setattr(llm, "chat_json", spy)
     hr = "Priya Rao. HR recruiter with 6 years in talent acquisition, onboarding and employee relations in Pune."
-    c.post("/api/prep", json={"resume": hr, "role": "HR Manager", "country": "India"})
+    d = c.post("/api/prep", json={"resume": hr, "role": "HR Manager", "country": "India"}).json()
     assert "prep_core" in seen and "prep_code" not in seen
 
 

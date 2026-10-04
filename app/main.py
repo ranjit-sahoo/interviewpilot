@@ -281,6 +281,12 @@ def prep_pack(body: StartIn):
     return prep.build(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
 
 
+@app.post("/api/prep/coding", dependencies=LIMITED)
+def prep_coding(body: StartIn):
+    """Coding questions for technical profiles, loaded separately so the core pack shows up sooner."""
+    return prep.build_coding(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+
+
 @app.get("/api/companies")
 def company_list():
     return {"companies": companies.names()}
