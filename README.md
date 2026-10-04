@@ -94,5 +94,7 @@ Pricing rule (documentation only):
 - The $49 tier has no card-country requirement. Indians living abroad, including those with Indian cards, pay $49 (for example via Stripe).
 - IP location is not a guarantee of physical location. This is an eligibility rule, not an anti-abuse guarantee; a small amount of VPN leakage is accepted at this scale.
 
+Business structure plan (documentation only): InterviewPilot stays the author's personal product, separate from any other company. Payments start with an individual (unregistered) Razorpay account for India and Lemon Squeezy for international customers. After roughly 100 paying customers, the author plans to register a One Person Company (OPC) and move the business under it.
+
 ## License
 MIT. See [LICENSE](LICENSE).
