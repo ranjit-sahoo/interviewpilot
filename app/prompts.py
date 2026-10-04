@@ -30,7 +30,7 @@ Given the question, the candidate's answer and the resume/role, return ONLY JSON
  "tips": [str] (1-3 interview tips for this market),
  "communication": {{"fluency": 1-5, "tone": str (short), "language_notes": [str] (up to 3 grammar/word-choice/phrasing fixes with the better phrase),
                     "tip": str (one spoken-English tip for client-facing calls)}},
- "followup": str (one natural follow-up question probing the weakest part)}}
+ "followup": str (one natural follow-up question probing the weakest part. Refer ONLY to things the candidate actually said in this answer or that appear on the resume; never say "you mentioned" about something they did not say)}}
 'star' scores structure (Situation, Task, Action, Result); for purely technical questions score structure and examples."""
 
 REPORT_SYSTEM = """You are an interview coach writing the end-of-session report from the transcript of a mock interview. {market}
