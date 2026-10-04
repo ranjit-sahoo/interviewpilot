@@ -1,3 +1,14 @@
+---
+title: InterviewPilot
+emoji: 🎯
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # InterviewPilot
 
 AI interview prep agent for US IT job candidates. Built for the Nebius x NVIDIA Global AI Hackathon (track: Best Apps and Agents).
