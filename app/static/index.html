@@ -92,11 +92,36 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
  .bubble{max-width:95%}.chips button{padding:10px 18px}.tabs{top:4px}.feat span{font-size:var(--fs-xs)}
  body.guided .feat{display:none}.cmp{flex-direction:column;align-items:flex-start}
 }
+
+.promise{font-size:var(--fs-lg);max-width:680px;margin:14px 0 0;color:var(--ink)}
+.strip{list-style:none;display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 4px;padding:0}.strip li{display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:10px 14px;font-size:var(--fs-sm)}.strip b{width:26px;height:26px;border-radius:50%;background:var(--acc);color:#0b1200;display:grid;place-items:center;font-size:13px}
+#sampleDet summary{cursor:pointer;list-style:none}#sampleDet summary::after{content:" +";color:var(--acc);font-weight:800}#sampleDet[open] summary::after{content:" -"}#sample h2,#trust h2{margin:0 0 6px;font-size:22px}.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}.sbox{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:16px}.sbox h3{margin:0 0 8px;font-size:16px;color:var(--acc)}
+.sq{font-weight:600}.sa{color:var(--mute);font-size:14px}.schips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.schips span{border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:13px}.schips b{color:var(--acc)}
+.sring{font-size:34px;margin:0}.sring b{color:var(--acc);font-size:48px}
+#trust details{border-top:1px solid var(--line);padding:10px 0}#trust summary{cursor:pointer;font-weight:600}#trust details p{margin:8px 0 0;color:var(--mute)}
+.mt{display:none}.tabs.showmore .mt{display:inline-block}.moreb{background:transparent!important;border:1px dashed var(--line)!important}
+.layout{display:block}.work{min-width:0}
+.bars .bar b{font-size:30px}.ring{display:inline-block;vertical-align:middle;margin-left:10px}.ansrow{border-top:1px solid var(--line);padding:12px 0}.ansrow audio{width:100%;max-width:420px;margin-top:6px}
+.nextcta{margin-top:18px;padding:16px;border:1px solid var(--acc);border-radius:14px;background:rgba(118,185,0,.08)}
+#ivTimer{font-variant-numeric:tabular-nums}#ivTimer.low{color:var(--bad)}
+.pace svg,.fillg svg{max-width:100%;height:auto}
+@media(max-width:820px){.sgrid{grid-template-columns:1fr}}
+@media(min-width:1100px){.wrap{max-width:1280px}.layout{display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px;align-items:start}.side{position:sticky;top:12px}.side .card{margin-top:0}.tabs{flex-wrap:wrap;overflow:visible;position:static}.tabs button{flex:0 1 auto}.work>.tabs{margin-top:0}.sgrid{gap:24px}}
+@media(min-width:821px) and (max-width:1099px){.tabs{flex-wrap:wrap;overflow:visible}.tabs button{flex:0 1 auto}}
 </style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><a class="skip" href="#profile">Skip to the main form</a><div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
-<div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
+<div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div><p class="promise">Paste your resume and a job description. In about a minute you get tailored questions, a scored mock interview and a report that tells you what to fix. Free, no login.</p>
+<ol class="strip" aria-label="How it works"><li><b>1</b><span>Get your prep pack</span></li><li><b>2</b><span>Do a mock interview, typed or spoken</span></li><li><b>3</b><span>Read your report, fix, retry</span></li></ol>
 <div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>Resume-to-job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
+<section class="card" id="sample"><details id="sampleDet"><summary><h2 id="sampleH" style="display:inline">See a real report</h2></summary>
+<p class="note">Real output from MockRep on a <b>fictional</b> sample resume (QA Automation Engineer) and a sample answer written for this demo. Nothing here is a customer review.</p>
+<div class="sgrid"><div class="sbox"><h3>Mock interview question</h3><p class="sq">Can you describe a time when you identified a critical bug during regression testing that had not been caught earlier, how you reported it, and what was the outcome?</p><p class="sa"><b>Sample answer:</b> Last spring, during regression on our checkout service, I noticed our nightly API suite passed but the order totals looked off in staging for orders with two discount codes. I wrote a quick Postman check and reproduced it: the second code was applied to the pre-discount price, so customers were overcharged by about 4 percent. I ...</p>
+<div class="schips"><span>Clarity <b>5/5</b></span><span>Depth <b>4/5</b></span><span>Correctness <b>5/5</b></span><span>STAR <b>5/5</b></span></div>
+<p><b>Coach feedback:</b> Your answer follows a clean STAR structure with specific tools (Postman, Jira, Jenkins) and a clear result (fix shipped next day, zero support tickets). Adding a quick quantification of the business impact — e.g., number of affected orders or revenue at risk — would make the outcome even more compelling for a US hiring manager.</p><p><b>Tip:</b> Quantify business impact (revenue, users affected) when describing bug outcomes.</p></div>
+<div class="sbox"><h3>Resume review</h3><p class="sring"><b>5</b>/10 <span class="note">resume score for this job</span></p>
+<p><b>Top fix:</b> Summary is vague and missing measurable impact.</p><p class="note">ATS and recruiters scan the first 3‑4 lines for years of experience, core tools (Selenium, Cypress, CI/CD, SQL, API), and a concrete result (e.g., “reduced regression defects 30%”). The current line only says “4 years … testing web and API applications”.</p><p><b>Suggested rewrite:</b> Rewrite as: “QA Automation Engineer with 4 years building and maintaining Selenium + Cypress UI/API test suites for fintech &amp; healthcare. Integrated tests into Jenkins/GitLab CI pipelines, cutting regression‑defect leakage by 35% and achieving 90%+ test coverage. Strong SQL, REST‑API validation, and Agile collaboration.”</p></div></div>
+<button id="sampleTry" class="alt">Try it with this sample resume</button></details></section>
 <div id="mock" class="pill hide">demo mode (offline sample answers)</div>
 
 <div class="card" id="acct"><span id="acctInfo" class="note">Guest mode: everything works without an account. Log in only if you want to save your work.</span>
@@ -110,7 +135,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
   <p class="note" style="margin:8px 0 0">Free. No login needed. You get questions tailored to your resume with model answers in about 10 seconds. <a href="#" id="guideAll" style="color:var(--acc2)">Show me all tools</a></p>
   <button id="guideSkip" class="ghost" style="margin-top:8px">Skip - take me to all tools</button><div class="note">Mock interview, question bank, coding practice and more work without a resume. Just enter a role.</div></div>
 
-<div class="card" id="profile">
+<div class="layout"><aside class="side"><div class="card" id="profile">
   <label for="role">Target role</label><input type="text" id="role" maxlength="200" placeholder="e.g. QA Engineer, Business Analyst">
   <label for="resume">Resume (paste text) or upload PDF, DOCX or TXT</label>
   <textarea id="resume" placeholder="Paste your resume here..."></textarea>
@@ -118,12 +143,12 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
   <label for="jd">Job description (optional, needed for JD Match)</label><textarea id="jd" style="min-height:80px"></textarea>
   <label id="cLabel">Country <span class="note" id="detNote">- we detect it from your resume and JD, tap to change</span></label>
   <div class="chips" id="countries" role="group" aria-labelledby="cLabel"><button data-c="US">US</button><button data-c="India">India</button><button data-c="Other">Other</button></div>
+  <button id="sampleFill" class="ghost" type="button">Try with a sample resume</button>
   <div id="profErr" class="err" role="alert"></div>
-</div>
+</div></aside><main class="work" id="work">
 
 <div class="tabs" id="tabs" role="tablist" aria-label="Tools">
-  <button data-t="prep" class="on">Interview Prep</button><button data-t="review">Resume Review</button><button data-t="match">JD Match</button>
-  <button data-t="interview">Mock Interview</button><button data-t="star">STAR Builder</button><button data-t="brief">Company Brief</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
+  <button data-t="prep" class="on">Interview Prep</button><button data-t="interview">Mock Interview</button><button data-t="review">Resume Review</button><button data-t="match">JD Match</button><button data-t="nego">Salary Negotiation</button><button type="button" id="moreBtn" class="moreb" aria-expanded="false">More tools</button><button data-t="star" class="mt">STAR Builder</button><button data-t="brief" class="mt">Company Brief</button><button data-t="bank" class="mt">Question Bank</button><button data-t="code" class="mt">Coding Practice</button><button data-t="builder" class="mt">Resume Builder</button><button data-t="recruiter" class="mt">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
 </div>
 
 <section id="t-prep" class="card"><p class="note" id="prepLead">Your resume, your job description, your market. Get practice questions tailored to your resume and job description, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
@@ -136,6 +161,8 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 <section id="t-interview" class="card hide">
   <div id="ivSetup"><p class="note" style="margin-top:0">No resume needed: enter your target role above and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">Difficulty</label>
     <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
+    <label for="ivMode">Session length</label>
+    <select id="ivMode"><option value="5">Quick: 5 questions</option><option value="8">Interview day: 8 questions, 2:30 per answer (timer)</option></select>
     <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
     <button id="btnStart" class="alt">Start mock interview</button>
     <span class="toggle" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
@@ -150,7 +177,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
       <div class="note">Voices come from your browser. Chrome and Edge on desktop usually have the most natural ones.</div>
     </div></div>
   <div id="interview" class="hide">
-    <div><span class="pill" id="qnum"></span><span class="pill" id="qtype"></span></div>
+    <div><span class="pill" id="qnum"></span><span class="pill" id="qtype"></span><span class="pill hide" id="ivTimer" role="timer" aria-live="off"></span></div>
     <h3 id="qtext"></h3>
     <div class="mic hide" id="micBar"><button id="btnSpeak" class="ghost">Replay question</button><button id="btnMic" class="alt">Start speaking</button><span id="micState" class="note"></span></div>
     <textarea id="ans" placeholder="Type your answer like you would say it in the interview..."></textarea>
@@ -243,7 +270,15 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 </section>
 <section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">MockRep stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
   <div class="wl"><input type="email" id="wlEmail" maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
+<section class="card" id="trust" aria-labelledby="trustH"><h2 id="trustH">Questions and trust</h2>
+<p class="note">Built by <a href="/about">Ranjit Kumar Sahoo</a>, who has worked in US IT staffing since 2017. Contact: <a href="mailto:ranjitkumarsahoo77@gmail.com">ranjitkumarsahoo77@gmail.com</a>. MockRep is free today. If paid plans ever launch, a clear refund policy will be published before anyone is asked to pay.</p>
+<details><summary>What AI does MockRep use?</summary><p>NVIDIA Nemotron models, served by Nebius Token Factory. Your text is sent there to produce your result. Our account has Zero Data Retention turned on, so Nebius is set not to keep prompts or outputs.</p></details>
+<details><summary>Do you store my resume?</summary><p>Guest sessions are kept for up to 2 days so you can continue, then removed. If you make an account, only the items you save and your scores are kept. You can delete your account and data any time. Details are in the <a href="/privacy">Privacy Policy</a>.</p></details>
+<details><summary>Is my voice recorded?</summary><p>Speech is turned into text by your own browser. Audio is never sent to or stored on our server. The playback in your report plays from your own device and disappears when you close the page.</p></details>
+<details><summary>Does it train on my data?</summary><p>No. There are no ads and no trackers.</p></details>
+<details><summary>Is it really free?</summary><p>Yes. There is a daily limit on AI use so the free service stays available. If the limit is reached, the question bank, coding practice and resume builder still work.</p></details></section>
 <div id="prArea"></div>
-<div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <br><a href="/terms">Terms</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/cookies">Cookies</a> &middot; <a href="https://github.com/ranjit-sahoo/mockrep" rel="noopener">Source code</a></div>
+</main></div>
+<div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <br><a href="/about">About</a> &middot; <a href="mailto:ranjitkumarsahoo77@gmail.com">Contact</a> &middot; <a href="/terms">Terms</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/cookies">Cookies</a> &middot; <a href="https://github.com/ranjit-sahoo/mockrep" rel="noopener">Source code</a></div>
 </div>
 <script src="/static/app.js" defer></script></body></html>
