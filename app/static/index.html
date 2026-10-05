@@ -501,7 +501,7 @@ function savePrefs(){try{localStorage.setItem(VK,JSON.stringify(prefs))}catch(e)
 function voiceScore(v){const n=v.name.toLowerCase();let sc=0;if(/natural|neural|online/.test(n))sc+=5;if(/google/.test(n))sc+=4;if(/samantha|karen|daniel|rishi|veena|ravi|heera|neerja|prabhat|aria|jenny|guy/.test(n))sc+=3;if(!v.localService)sc+=2;if(/compact|espeak|-x-.*-local/.test(n))sc-=3;return sc}
 function voicesFor(lang){if(!TTS)return[];const all=TTS.getVoices().filter(v=>v.lang&&v.lang.replace('_','-').toLowerCase()===lang.toLowerCase());
   const base=lang.slice(0,2);const pool=all.length?all:TTS.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith(base));return pool.sort((a,b)=>voiceScore(b)-voiceScore(a))}
-function refreshVoices(){if(!TTS)return;const acc=prefs.accent||(country==='India'?'en-IN':'en-US');$('vAccent').value=acc;
+function refreshVoices(){if(!TTS)return;const acc=prefs.accent||'en-US';$('vAccent').value=acc;
   const vs=voicesFor(acc);$('vVoice').innerHTML=vs.length?vs.map(v=>`<option value="${esc(v.name)}">${esc(v.name)}</option>`).join(''):'<option value="">Browser default</option>';
   if(vs.some(v=>v.name===prefs.voice))$('vVoice').value=prefs.voice;else $('vVoice').value=vs[0]?vs[0].name:'';
   $('vRate').value=prefs.rate;$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'+(prefs.rate<=0.85?' (slow and clear)':prefs.rate>=0.95?' (natural pace)':'')}
@@ -515,13 +515,13 @@ function chunks(text){const s=String(text).replace(/\s+/g,' ').trim().match(/[^.
   for(const x of s){if(cur&&(cur+' '+x).length>220){out.push(cur);cur=x.trim()}else cur=(cur?cur+' ':'')+x.trim()}if(cur)out.push(cur);return out}
 let warmed=false;function warmSpeech(){if(!TTS||warmed)return;warmed=true;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;TTS.speak(u)}catch(e){}}
 function speak(text,onend,force){if(!(voice||force)||!TTS){onend&&onend();return}TTS.cancel();
-  const acc=prefs.accent||(country==='India'?'en-IN':'en-US');const list=voicesFor(acc);let vi=Math.max(0,list.findIndex(x=>x.name===prefs.voice));
+  const acc=prefs.accent||'en-US';const list=voicesFor(acc);let vi=Math.max(0,list.findIndex(x=>x.name===prefs.voice));
   const parts=chunks(text);let i=0,done=false,tries=0;const fin=()=>{if(!done){done=true;onend&&onend()}};
   const next=()=>{if(i>=parts.length)return fin();const t=parts[i];const u=new SpeechSynthesisUtterance(t);u.lang=acc;if(list[vi])u.voice=list[vi];u.rate=prefs.rate;u.pitch=1;
     u.onend=()=>{i++;tries=0;next()};
     u.onerror=ev=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;if(tries++<1&&list.length>1){vi=(vi+1)%list.length;next()}else fin()};
     TTS.speak(u)};next()}
-function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||(country==='India'?'en-IN':'en-US');rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
+function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||'en-US';rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
   rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('ans').value=(baseText?baseText+' ':'')+t.trim()};
   rec.onerror=e=>{listening=false;$('btnMic').textContent='Start speaking';$('micState').textContent=e.error==='not-allowed'?'Microphone blocked. Allow it in the browser address bar, or switch to Type.':e.error==='no-speech'?'No speech heard. Try again.':'Mic problem ('+e.error+'). You can type instead.'};
   rec.onend=()=>{listening=false;$('btnMic').textContent='Start speaking';if(!$('micState').textContent.startsWith('Mic')&&!$('micState').textContent.includes('blocked'))$('micState').innerHTML='Review or edit your answer, then submit.'};
