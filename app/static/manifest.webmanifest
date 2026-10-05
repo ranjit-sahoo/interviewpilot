@@ -1,6 +1,6 @@
 {
-  "name": "InterviewPilot",
-  "short_name": "InterviewPilot",
+  "name": "MockRep",
+  "short_name": "MockRep",
   "description": "AI interview prep: resume review, JD match, voice mock interviews, salary negotiation and recruiter screening.",
   "start_url": "/",
   "scope": "/",
