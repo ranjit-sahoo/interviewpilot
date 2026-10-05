@@ -23,7 +23,7 @@ STATIC = os.path.join(os.path.dirname(__file__), "static")
 MAX_UPLOAD = 5 * 1024 * 1024
 LIMITED = [Depends(rate_limit)]
 _signup_limiter = RateLimiter(limit=int(os.environ.get("SIGNUPS_PER_DAY", "10")), window=86400.0)
-_fail_limiter = FailLimiter(limit=5, window=600.0)
+_fail_limiter = FailLimiter(limit=5, window=1800.0)
 _auth_limiter = RateLimiter(limit=int(os.environ.get("AUTH_RATE_PER_MIN", "10")), window=60.0)
 COOKIE = "ip_session"
 PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://interviewpilot-bdzx.onrender.com")
@@ -450,7 +450,7 @@ def auth_register(body: AuthIn, request: Request):
 def auth_login(body: AuthIn, request: Request):
     ek = "e:" + body.email.strip().lower()[:320]
     if _fail_limiter.blocked(ek):
-        raise HTTPException(429, "Too many failed attempts for this account. Please wait 10 minutes.")
+        raise HTTPException(429, "Too many failed attempts for this account. Please wait 30 minutes.")
     try:
         user, token = accounts.login(body.email, body.password)
     except PermissionError as e:
