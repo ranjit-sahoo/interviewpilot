@@ -13,14 +13,18 @@ async function api(url,opts){
   return j;
 }
 const post=(url,body)=>api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-async function busy(btn,label,fn){const t=btn.textContent;btn.disabled=true;btn.textContent=label;try{await fn()}finally{btn.disabled=false;btn.textContent=t}}
+async function busy(btn,label,fn){const t=btn.textContent,w=btn.offsetWidth;if(w)btn.style.minWidth=w+'px';btn.disabled=true;btn.textContent=label;try{await fn()}finally{btn.disabled=false;btn.textContent=t;btn.style.minWidth=''}}
 function role(){const v=$('role').value.trim();if(!v)throw new Error('Enter your target role.');return v}
 function resumeText(){const v=$('resume').value.trim();if(v.length<30)throw new Error('Paste your resume text or upload a PDF/TXT file.');return v}
 function profErr(m){$('profErr').textContent=m||''}
 
 // ---- tabs
+document.querySelectorAll('#tabs button').forEach(b=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.setAttribute('aria-controls','t-'+b.dataset.t)});
+$('tabs').onkeydown=e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const bs=[...document.querySelectorAll('#tabs button:not(.hide)')],i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const n=bs[(i+(e.key==='ArrowRight'?1:bs.length-1))%bs.length];n.focus();n.click()};
+// cheap intent preload: fetch the coding problem list when the user points at or focuses that tab
+const cpTab=document.querySelector('#tabs [data-t=code]');if(cpTab){const pre=()=>{if(typeof cpLoad==='function')cpLoad()};cpTab.addEventListener('pointerenter',pre,{once:true});cpTab.addEventListener('focus',pre,{once:true})}
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
   ['prep','review','match','interview','star','brief','nego','bank','code','builder','recruiter','history'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();if(t==='history'&&typeof histLoad==='function')histLoad();profErr('')};
 
 // ---- question bank
@@ -105,7 +109,7 @@ function rbPrevRender(){
   if(r.skills.length)h.push(`<h2>Skills</h2><div>${r.skills.map(esc).join(', ')}</div>`);
   $('rbPrev').innerHTML=h.join('');rbSave();
 }
-function rbInp(cls,idx,key,label,val,area){return `<label>${label}</label>${area?`<textarea class="${cls}" data-i="${idx}" data-k="${key}" style="min-height:80px">${esc(val)}</textarea>`:`<input class="${cls}" data-i="${idx}" data-k="${key}" value="${esc(val)}" maxlength="200">`}`}
+function rbInp(cls,idx,key,label,val,area){return `<label class="rbl">${label}${area?`<textarea class="${cls}" data-i="${idx}" data-k="${key}" style="min-height:80px">${esc(val)}</textarea>`:`<input class="${cls}" data-i="${idx}" data-k="${key}" value="${esc(val)}" maxlength="200">`}</label>`}
 function rbFormRender(){
   for(const k of ['name','title','email','phone','location','summary'])$('rb_'+k).value=RB[k]||'';
   $('rb_links').value=RB.links.join(', ');$('rb_skills').value=RB.skills.join(', ');
@@ -168,10 +172,12 @@ async function refreshMe(){try{const j=await api('/api/auth/me');me=j.user;persi
   $('acctOpen').classList.toggle('hide',!!me);$('acctHist').classList.toggle('hide',!me);$('acctOut').classList.toggle('hide',!me);$('tabHist').classList.toggle('hide',!me);
   if(me)$('acctForm').classList.add('hide')}
 $('acctOpen').onclick=()=>$('acctForm').classList.toggle('hide');
-async function authGo(path){$('acErr').textContent='';
-  try{await post(path,{email:$('acEmail').value,password:$('acPw').value});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
+async function authGo(path,agree){$('acErr').textContent='';
+  try{await post(path,agree?{email:$('acEmail').value,password:$('acPw').value,agree:true}:{email:$('acEmail').value,password:$('acPw').value});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
 $('acLogin').onclick=()=>busy($('acLogin'),'...',()=>authGo('/api/auth/login'));
-$('acReg').onclick=()=>busy($('acReg'),'...',()=>authGo('/api/auth/register'));
+$('acReg').onclick=()=>{if(!$('acAgree').checked){$('acErr').textContent='Please tick the box to agree to the Terms of Use and Privacy Policy before creating an account.';$('acAgree').focus();return}busy($('acReg'),'...',()=>authGo('/api/auth/register',true))};
+['acEmail','acPw'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('acLogin').click()}}));
+$('wlEmail').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('wlBtn').click()}});
 $('acctOut').onclick=async()=>{await post('/api/auth/logout',{});await refreshMe();document.querySelector('[data-t=prep]').click()};
 $('acctHist').onclick=()=>document.querySelector('[data-t=history]').click();
 async function saveItem(kind,title,data,btn){
