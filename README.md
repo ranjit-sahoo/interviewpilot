@@ -133,3 +133,11 @@ Nothing is submitted to any store before the hackathon judging period ends on De
 
 ## License
 MIT. See [LICENSE](LICENSE).
+
+## Interview-day mode, reports and keep-alive
+
+- **Quick or Interview day:** pick 5 questions, or 8 questions with a 2:30 answer timer (a soft countdown, nothing is forced).
+- **Voice answers:** the report plays back each answer from your own device, shows a transcript, speaking pace (words per minute) and a filler-word chart. Audio is never uploaded.
+- **Report PDF:** the "Download report as PDF" button prints a branded report with transcripts, pace and fillers.
+- **Sample report:** the homepage shows real app output on a fictional resume. The "Try with a sample resume" button fills the form with that same resume.
+- **Keep-alive:** the free Render instance is pinged on `/health` every 5 minutes by an external monitor, with `.github/workflows/keepalive.yml` as a backup. This keeps cold starts away.
