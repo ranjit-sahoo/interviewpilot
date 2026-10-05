@@ -102,6 +102,8 @@ InterviewPilot is built for educated professionals in India and the US. The live
 
 Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs. Not built yet; no payment code exists in this repository.
 
+Planned rename: the product is planned to be renamed MockRep after the hackathon (around Dec 15, 2026). Target domains are mockrep.com and mockrep.in, and the social handle pattern is @getmockrep. The live app and this repository stay named InterviewPilot until the hackathon judging ends. Domains are not registered yet.
+
 Pricing rule (documentation only):
 - Rs 499 per year for visitors with an India IP address. $49 per year for every other country (US, UK, UAE, Canada and anywhere else).
 - The pricing country is never chosen by the user. IP geolocation alone sets the price shown.
