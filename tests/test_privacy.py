@@ -47,3 +47,16 @@ def test_robots_and_sitemap_public_pages_only():
     s = c.get("/sitemap.xml")
     assert s.status_code == 200 and "xml" in s.headers["content-type"]
     assert "/privacy</loc>" in s.text and "/api" not in s.text and "/c/" not in s.text and "/stats" not in s.text
+
+
+def test_product_name_is_mockrep_everywhere_users_see_it():
+    home = c.get("/").text
+    assert "<title>MockRep" in home and "InterviewPilot" not in home and ">MR<" in home
+    assert "InterviewPilot" not in c.get("/static/app.js").text
+    assert "MockRep" in c.get("/privacy").text and "InterviewPilot" not in c.get("/privacy").text
+    assert "MockRep" in c.get("/stats").text and "InterviewPilot" not in c.get("/stats").text
+    assert "MockRep" in c.get("/static/manifest.webmanifest").text
+    for n in ("icon-192", "icon-512", "apple-touch-icon", "maskable-512"):
+        r = c.get(f"/static/icons/{n}.png")
+        assert r.status_code == 200 and r.content[:4] == b"\x89PNG"
+    assert c.get("/static/icons/evil.png").status_code == 404
