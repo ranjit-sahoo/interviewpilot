@@ -167,7 +167,7 @@ def render_html(s: dict) -> str:
         f"<div class='g'>{cards}<div class='c'><b>{int(s['visitor_days'])}</b><span>Unique visitor-days</span></div></div>"
         f"<div class='w'><table><thead><tr><th>Day</th><th>Visitors</th>{head}</tr></thead><tbody>{rows}</tbody></table></div>"
         "<p>First-party counts only: no cookies, no third-party scripts, no IP addresses stored. A visitor is counted once per day "
-        "using a one-way hash that cannot be reversed or linked across days. Bots and uptime checks are skipped. <a href='/privacy'>Privacy Policy</a></p></body></html>"
+        "using a one-way hash that cannot be reversed or linked across days. Bots and uptime checks are skipped. <a href='/terms'>Terms</a> &middot; <a href='/privacy'>Privacy Policy</a> &middot; <a href='/cookies'>Cookies</a></p></body></html>"
     )
 
 
