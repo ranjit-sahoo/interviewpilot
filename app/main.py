@@ -30,7 +30,7 @@ _fail_limiter = FailLimiter(limit=5, window=1800.0)
 _waitlist_limiter = RateLimiter(limit=int(os.environ.get("WAITLIST_PER_DAY", "10")), window=86400.0)
 _auth_limiter = RateLimiter(limit=int(os.environ.get("AUTH_RATE_PER_MIN", "10")), window=60.0)
 COOKIE = "ip_session"
-PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://interviewpilot-bdzx.onrender.com")
+PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://mockrep.onrender.com")
 
 
 def auth_limit(request: Request):
