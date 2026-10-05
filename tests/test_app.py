@@ -621,3 +621,74 @@ def test_waitlist():
     assert c.post("/api/waitlist", json={"email": "fan@example.com"}).json() == {"ok": True, "new": False}
     assert c.post("/api/waitlist", json={"email": "nope"}).status_code == 400
     assert c.post("/api/waitlist", json={"email": "x" * 300 + "@a.com"}).status_code == 422
+
+
+def _docx_bytes(paragraphs):
+    import io
+    import zipfile
+
+    body = "".join(f"<w:p><w:r><w:t>{p}</w:t></w:r></w:p>" for p in paragraphs)
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>{body}</w:body></w:document>'
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+        z.writestr("word/document.xml", xml)
+    return buf.getvalue()
+
+
+def test_docx_upload_gives_clean_text_not_bytes():
+    raw = _docx_bytes(["Ranjit Sahoo", "Fresher QA engineer, Bhubaneswar", "Skills: Python &amp; SQL"])
+    r = c.post("/api/extract", files={"file": ("Resume (1).docx", raw, "application/octet-stream")})
+    assert r.status_code == 200
+    assert r.json()["text"] == "Ranjit Sahoo\nFresher QA engineer, Bhubaneswar\nSkills: Python & SQL"
+    # detected by content even if the name is wrong
+    assert c.post("/api/extract", files={"file": ("resume.txt", raw, "text/plain")}).json()["text"].startswith("Ranjit Sahoo")
+
+
+def test_binary_and_broken_uploads_give_clear_errors():
+    junk = bytes(range(256)) * 40
+    for name in ("a.bin", "a.txt", "a.docx"):
+        r = c.post("/api/extract", files={"file": (name, junk, "application/octet-stream")})
+        assert r.status_code == 400 and "\ufffd" not in r.text
+    assert c.post("/api/extract", files={"file": ("old.doc", b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"x" * 50, "application/msword")}).status_code == 400
+    assert c.post("/api/extract", files={"file": ("e.txt", b"  ", "text/plain")}).status_code == 400
+
+
+def test_geo_from_cdn_header():
+    assert c.get("/api/geo", headers={"cf-ipcountry": "IN"}).json()["country"] == "India"
+    assert c.get("/api/geo", headers={"cf-ipcountry": "US"}).json()["country"] == "US"
+    assert c.get("/api/geo", headers={"cf-ipcountry": "DE"}).json()["country"] == "Other"
+    assert c.get("/api/geo").json()["country"] is None
+
+
+def test_mock_interview_and_negotiation_work_without_a_resume():
+    d = c.post("/api/session", json={"resume": "", "role": "Business Analyst", "country": "India"})
+    assert d.status_code == 200 and d.json()["question"]["question"]
+    assert c.post("/api/session", json={"resume": "", "role": "", "country": "India"}).status_code == 400
+    n = c.post("/api/negotiation", json={"resume": "", "role": "Business Analyst", "country": "India"})
+    assert n.status_code == 200
+
+
+def _tiny_pdf(text):
+    objs = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    ]
+    stream = f"BT /F1 12 Tf 20 100 Td ({text}) Tj ET"
+    objs.append(f"<< /Length {len(stream)} >>\nstream\n{stream}\nendstream")
+    objs.append("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
+    out, offs = "%PDF-1.4\n", []
+    for i, o in enumerate(objs, 1):
+        offs.append(len(out))
+        out += f"{i} 0 obj\n{o}\nendobj\n"
+    x = len(out)
+    out += f"xref\n0 {len(objs)+1}\n0000000000 65535 f \n" + "".join(f"{o:010d} 00000 n \n" for o in offs)
+    out += f"trailer\n<< /Size {len(objs)+1} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF"
+    return out.encode()
+
+
+def test_pdf_upload_extracts_text():
+    r = c.post("/api/extract", files={"file": ("cv.pdf", _tiny_pdf("Priya QA engineer Pune"), "application/pdf")})
+    assert r.status_code == 200 and "Priya QA engineer Pune" in r.json()["text"]
+    assert c.post("/api/extract", files={"file": ("bad.pdf", b"%PDF-1.4 nonsense", "application/pdf")}).status_code == 400

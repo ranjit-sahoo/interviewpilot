@@ -133,23 +133,70 @@ class ScreenIn(BaseModel):
     candidates: list[Candidate] = Field(max_length=services.MAX_CANDIDATES)
 
 
+def _docx_text(raw: bytes) -> str:
+    import re
+    import zipfile
+    from xml.etree import ElementTree as ET
+
+    try:
+        z = zipfile.ZipFile(io.BytesIO(raw))
+        if len(z.infolist()) > 3000:
+            raise ValueError("too many entries")
+        info = z.getinfo("word/document.xml")
+        if info.file_size > 12_000_000:
+            raise HTTPException(413, "This document is too large to read.")
+        root = ET.fromstring(z.read(info))
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(400, "Could not read this Word file. Save it as PDF or paste the text.")
+    w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    lines = []
+    for p in root.iter(w + "p"):
+        buf = []
+        for el in p.iter():
+            if el.tag == w + "t" and el.text:
+                buf.append(el.text)
+            elif el.tag in (w + "tab",):
+                buf.append("\t")
+            elif el.tag in (w + "br", w + "cr"):
+                buf.append("\n")
+        line = "".join(buf).strip()
+        if line:
+            lines.append(line)
+    return "\n".join(lines)
+
+
 def _read_upload(file: UploadFile) -> str:
     raw = file.file.read(MAX_UPLOAD + 1)
     if len(raw) > MAX_UPLOAD:
         raise HTTPException(413, "File is too large (5 MB max).")
-    if file.filename.lower().endswith(".pdf"):
+    name = (file.filename or "").lower()
+    if raw[:4] == b"%PDF" or name.endswith(".pdf"):
         try:
             from pypdf import PdfReader
 
             reader = PdfReader(io.BytesIO(raw))
             if len(reader.pages) > 30:
                 raise HTTPException(413, "This PDF has too many pages (30 max).")
-            return "\n".join((p.extract_text() or "") for p in reader.pages)
+            text = "\n".join((p.extract_text() or "") for p in reader.pages)
         except HTTPException:
             raise
         except Exception:
             raise HTTPException(400, "Could not read this PDF. Try a text-based PDF or paste the text.")
-    return raw.decode("utf-8", errors="ignore")
+    elif raw[:2] == b"PK" or name.endswith(".docx"):
+        text = _docx_text(raw)
+    elif raw[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" or name.endswith(".doc"):
+        raise HTTPException(400, "Old .doc files are not supported. Save it as .docx or PDF, or paste the text.")
+    else:
+        text = raw.decode("utf-8", errors="replace")
+        bad = text.count("\ufffd") + sum(1 for ch in text[:5000] if ord(ch) < 32 and ch not in "\n\r\t")
+        if "\x00" in text or bad > max(5, len(text[:5000]) // 50):
+            raise HTTPException(400, "This file is not readable text. Upload a PDF, DOCX or TXT, or paste your resume.")
+    text = text.replace("\x00", "").strip()
+    if len(text) < 10:
+        raise HTTPException(400, "No readable text found (a scanned image?). Paste the text instead.")
+    return text
 
 
 def _need_resume(text: str) -> str:
@@ -157,6 +204,14 @@ def _need_resume(text: str) -> str:
     if len(text) < 30:
         raise HTTPException(400, "Paste your resume text or upload a PDF/TXT file.")
     return text
+
+
+BLANK_RESUME = "(No resume provided. Ask questions typical for this role and a mid-level candidate, and keep answers general but practical.)"
+
+
+def _resume_or_blank(text: str) -> str:
+    text = (text or "").strip()
+    return text if len(text) >= 30 else BLANK_RESUME
 
 
 def _need_role(role: str) -> str:
@@ -189,6 +244,13 @@ def extract(file: UploadFile = File(...)):
     return {"text": text}
 
 
+@app.get("/api/geo")
+def geo(request: Request):
+    """Best-effort guess from the CDN's country header. Only a starting point; resume content refines it."""
+    cc = request.headers.get("cf-ipcountry", "").strip().upper()
+    return {"country": {"IN": "India", "US": "US"}.get(cc, "Other") if cc and cc not in ("XX", "T1") else None, "code": cc or None}
+
+
 @app.post("/api/detect-country", dependencies=LIMITED)
 def detect(body: DetectIn):
     if len(body.resume.strip()) < 30:
@@ -217,7 +279,7 @@ def match(body: MatchIn):
 
 @app.post("/api/session", dependencies=LIMITED)
 def start(body: StartIn):
-    return services.start_session(_need_resume(body.resume), _need_role(body.role), body.jd, body.country, body.level, body.followups)
+    return services.start_session(_resume_or_blank(body.resume), _need_role(body.role), body.jd, body.country, body.level, body.followups)
 
 
 @app.post("/api/session/{sid}/answer", dependencies=LIMITED)
@@ -248,7 +310,7 @@ def report(sid: str, request: Request):
 
 @app.post("/api/negotiation", dependencies=LIMITED)
 def nego_start(body: NegoStartIn):
-    return services.start_negotiation(_need_resume(body.resume), _need_role(body.role), body.country, body.current)
+    return services.start_negotiation(_resume_or_blank(body.resume), _need_role(body.role), body.country, body.current)
 
 
 @app.post("/api/negotiation/{sid}/say", dependencies=LIMITED)

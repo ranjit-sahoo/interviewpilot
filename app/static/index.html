@@ -103,13 +103,14 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
     <button id="acLogin">Log in</button><button id="acReg" class="alt">Create account</button><div id="acErr" class="err" role="alert"></div></div></div>
 
 <div class="card" id="guide"><div class="steps"><span><b>1</b> Your target role</span><span><b>2</b> Paste your resume</span><span><b>3</b> Add the job description (optional)</span><span><b>4</b> Generate</span></div>
-  <p class="note" style="margin:8px 0 0">Free. No login needed. You get questions tailored to your resume with model answers in about 10 seconds. <a href="#" id="guideAll" style="color:var(--acc2)">Show me all tools</a></p></div>
+  <p class="note" style="margin:8px 0 0">Free. No login needed. You get questions tailored to your resume with model answers in about 10 seconds. <a href="#" id="guideAll" style="color:var(--acc2)">Show me all tools</a></p>
+  <button id="guideSkip" class="ghost" style="margin-top:8px">Skip - take me to all tools</button><div class="note">Mock interview, question bank, coding practice and more work without a resume. Just enter a role.</div></div>
 
 <div class="card" id="profile">
   <label for="role">Target role</label><input type="text" id="role" maxlength="200" placeholder="e.g. QA Automation Engineer, Business Analyst, Java Developer">
-  <label for="resume">Resume (paste text) or upload PDF/TXT</label>
+  <label for="resume">Resume (paste text) or upload PDF, DOCX or TXT</label>
   <textarea id="resume" placeholder="Paste your resume here..."></textarea>
-  <input type="file" id="file" accept=".pdf,.txt" aria-label="Upload resume">
+  <input type="file" id="file" accept=".pdf,.docx,.txt" aria-label="Upload resume">
   <label for="jd">Job description (optional, needed for JD Match)</label><textarea id="jd" style="min-height:80px"></textarea>
   <label>Country <span class="note" id="detNote">- we detect it from your resume and JD, tap to change</span></label>
   <div class="chips" id="countries" role="group" aria-label="Country"><button data-c="US">US</button><button data-c="India">India</button><button data-c="Other">Other</button></div>
@@ -129,7 +130,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 <section id="t-match" class="card hide"><button id="btnMatch">Compare resume with job description</button><div id="matchOut"></div></section>
 
 <section id="t-interview" class="card hide">
-  <div id="ivSetup"><label for="ivLevel">Difficulty</label>
+  <div id="ivSetup"><p class="note" style="margin-top:0">No resume needed: enter your target role above and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">Difficulty</label>
     <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
     <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
     <button id="btnStart" class="alt">Start mock interview</button>
@@ -458,6 +459,9 @@ async function detect(){
   catch(e){$('detNote').textContent='- could not detect, please choose'}
 }
 $('resume').addEventListener('blur',detect);$('jd').addEventListener('blur',detect);
+let detTimer=null;const detSoon=()=>{clearTimeout(detTimer);detTimer=setTimeout(()=>{if($('resume').value.trim().length>=80)detect()},1200)};
+$('resume').addEventListener('input',detSoon);$('jd').addEventListener('input',detSoon);
+fetch('/api/geo').then(r=>r.json()).then(g=>{if(g.country&&!country&&!countryTouched){setCountry(g.country,false);$('detNote').textContent=`- we guessed ${g.country} from your location. Paste your resume and we will confirm. Tap to change`}}).catch(()=>{});
 async function ensureCountry(){await detect();if(!country)setCountry('US',false);return country}
 
 $('file').onchange=async()=>{const f=$('file').files[0];if(!f)return;profErr('');
@@ -491,27 +495,32 @@ let rec=null,listening=false,baseText='';
 $('voiceNote').textContent=(SR&&TTS)?'Voice mode: the interviewer asks aloud and you answer by speaking. Your browser will ask for microphone permission once.':'Voice mode needs Chrome, Edge or Safari. Typing works everywhere.';
 function setMode(v){if(v&&!(SR&&TTS)){$('voiceNote').textContent='Voice is not supported in this browser. Use Chrome, Edge or Safari, or type your answers.';return}
   voice=v;$('mText').classList.toggle('on',!v);$('mVoice').classList.toggle('on',v);$('micBar').classList.toggle('hide',!v);$('voiceOpts').classList.toggle('hide',!v);if(v)refreshVoices();if(!v){stopMic();if(TTS)TTS.cancel()}}
-$('mText').onclick=()=>setMode(false);$('mVoice').onclick=()=>setMode(true);
-const VK='ip_voice';let prefs={accent:null,voice:'',rate:0.8};try{const sv=JSON.parse(localStorage.getItem(VK)||'{}');if(sv&&typeof sv==='object')prefs=Object.assign(prefs,sv);prefs.rate=Math.min(1.1,Math.max(0.6,Number(prefs.rate)||0.8))}catch(e){}
+$('mText').onclick=()=>setMode(false);$('mVoice').onclick=()=>{warmSpeech();setMode(true)};
+const VK='ip_voice';let prefs={accent:null,voice:'',rate:1.0,v:2};try{const sv=JSON.parse(localStorage.getItem(VK)||'{}');if(sv&&typeof sv==='object'){if(sv.v!==2){delete sv.rate;delete sv.voice}prefs=Object.assign(prefs,sv);prefs.v=2}prefs.rate=Math.min(1.1,Math.max(0.6,Number(prefs.rate)||1.0))}catch(e){}
 function savePrefs(){try{localStorage.setItem(VK,JSON.stringify(prefs))}catch(e){}}
-function voiceScore(v){const n=v.name.toLowerCase();let sc=0;if(/natural|neural|online/.test(n))sc+=5;if(/google|samantha|karen|daniel|rishi|veena|ravi|heera|neerja|prabhat|aria|jenny|guy/.test(n))sc+=3;if(!v.localService)sc+=1;if(/compact|espeak/.test(n))sc-=3;return sc}
+function voiceScore(v){const n=v.name.toLowerCase();let sc=0;if(/natural|neural|online/.test(n))sc+=5;if(/google/.test(n))sc+=4;if(/samantha|karen|daniel|rishi|veena|ravi|heera|neerja|prabhat|aria|jenny|guy/.test(n))sc+=3;if(!v.localService)sc+=2;if(/compact|espeak|-x-.*-local/.test(n))sc-=3;return sc}
 function voicesFor(lang){if(!TTS)return[];const all=TTS.getVoices().filter(v=>v.lang&&v.lang.replace('_','-').toLowerCase()===lang.toLowerCase());
   const base=lang.slice(0,2);const pool=all.length?all:TTS.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith(base));return pool.sort((a,b)=>voiceScore(b)-voiceScore(a))}
 function refreshVoices(){if(!TTS)return;const acc=prefs.accent||(country==='India'?'en-IN':'en-US');$('vAccent').value=acc;
   const vs=voicesFor(acc);$('vVoice').innerHTML=vs.length?vs.map(v=>`<option value="${esc(v.name)}">${esc(v.name)}</option>`).join(''):'<option value="">Browser default</option>';
   if(vs.some(v=>v.name===prefs.voice))$('vVoice').value=prefs.voice;else $('vVoice').value=vs[0]?vs[0].name:'';
-  $('vRate').value=prefs.rate;$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'+(prefs.rate<=0.85?' (slow and clear)':'')}
+  $('vRate').value=prefs.rate;$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'+(prefs.rate<=0.85?' (slow and clear)':prefs.rate>=0.95?' (natural pace)':'')}
 if(TTS){TTS.onvoiceschanged=refreshVoices;refreshVoices()}
 $('vAccent').onchange=()=>{prefs.accent=$('vAccent').value;prefs.voice='';savePrefs();refreshVoices()};
 $('vVoice').onchange=()=>{prefs.voice=$('vVoice').value;savePrefs()};
 $('vRate').oninput=()=>{prefs.rate=parseFloat($('vRate').value);savePrefs();$('vRateVal').textContent=prefs.rate.toFixed(2)+'x'};
 $('vTest').onclick=()=>speak('Hello, welcome to your interview. Please tell me about yourself, and take your time.',null,true);
-// Speak sentence by sentence with short pauses so it sounds like a person, not a stream.
+// Natural playback: a few long chunks (whole sentences, ~220 chars) with no artificial pauses. Many tiny utterances sounded halting.
+function chunks(text){const s=String(text).replace(/\s+/g,' ').trim().match(/[^.!?]+[.!?]*/g)||[String(text)];const out=[];let cur='';
+  for(const x of s){if(cur&&(cur+' '+x).length>220){out.push(cur);cur=x.trim()}else cur=(cur?cur+' ':'')+x.trim()}if(cur)out.push(cur);return out}
+let warmed=false;function warmSpeech(){if(!TTS||warmed)return;warmed=true;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;TTS.speak(u)}catch(e){}}
 function speak(text,onend,force){if(!(voice||force)||!TTS){onend&&onend();return}TTS.cancel();
-  const acc=prefs.accent||(country==='India'?'en-IN':'en-US');const v=voicesFor(acc).find(x=>x.name===prefs.voice)||voicesFor(acc)[0];
-  const parts=String(text).match(/[^.!?]+[.!?]*/g)||[String(text)];let i=0,done=false;const fin=()=>{if(!done){done=true;onend&&onend()}};
-  const next=()=>{if(i>=parts.length)return fin();const t=parts[i++].trim();if(!t)return next();const u=new SpeechSynthesisUtterance(t);u.lang=acc;if(v)u.voice=v;u.rate=prefs.rate;u.pitch=1;
-    u.onend=()=>setTimeout(next,350);u.onerror=fin;TTS.speak(u)};next()}
+  const acc=prefs.accent||(country==='India'?'en-IN':'en-US');const list=voicesFor(acc);let vi=Math.max(0,list.findIndex(x=>x.name===prefs.voice));
+  const parts=chunks(text);let i=0,done=false,tries=0;const fin=()=>{if(!done){done=true;onend&&onend()}};
+  const next=()=>{if(i>=parts.length)return fin();const t=parts[i];const u=new SpeechSynthesisUtterance(t);u.lang=acc;if(list[vi])u.voice=list[vi];u.rate=prefs.rate;u.pitch=1;
+    u.onend=()=>{i++;tries=0;next()};
+    u.onerror=ev=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;if(tries++<1&&list.length>1){vi=(vi+1)%list.length;next()}else fin()};
+    TTS.speak(u)};next()}
 function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||(country==='India'?'en-IN':'en-US');rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
   rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('ans').value=(baseText?baseText+' ':'')+t.trim()};
   rec.onerror=e=>{listening=false;$('btnMic').textContent='Start speaking';$('micState').textContent=e.error==='not-allowed'?'Microphone blocked. Allow it in the browser address bar, or switch to Type.':e.error==='no-speech'?'No speech heard. Try again.':'Mic problem ('+e.error+'). You can type instead.'};
@@ -523,7 +532,7 @@ $('btnSpeak').onclick=()=>speak($('qtext').textContent);
 
 // ---- interview
 $('btnStart').onclick=()=>busy($('btnStart'),'Preparing questions...',async()=>{profErr('');
-  try{const d=await post('/api/session',{resume:resumeText(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked});
+  try{const d=await post('/api/session',{resume:$('resume').value.trim(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked});
     sid=d.session_id;fuOn=$('ivFu').checked;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
   }catch(e){profErr(e.message)}});
 function showQ(q,n,t,fu){curFu=!!fu;retryMode=false;$('btnAns').textContent='Submit answer';if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
@@ -609,7 +618,7 @@ $('btnBrief').onclick=()=>busy($('btnBrief'),'Researching...',async()=>{$('brief
 // ---- negotiation
 function bubble(who,t){const d=document.createElement('div');d.className='bubble '+(who==='recruiter'?'r':'c');d.innerHTML=`<small class="note">${who==='recruiter'?'Recruiter':'You'}</small><br>${esc(t)}`;$('chat').appendChild(d);d.scrollIntoView({behavior:'smooth',block:'nearest'})}
 $('btnNego').onclick=()=>busy($('btnNego'),'Setting up...',async()=>{profErr('');$('negoErr').textContent='';
-  try{const d=await post('/api/negotiation',{resume:resumeText(),role:role(),country:await ensureCountry(),current:$('curpay').value});
+  try{const d=await post('/api/negotiation',{resume:$('resume').value.trim(),role:role(),country:await ensureCountry(),current:$('curpay').value});
     nsid=d.session_id;$('chat').innerHTML='';$('negoRep').innerHTML='';$('negoBox').classList.remove('hide');const s=d.scenario;
     $('negoInfo').textContent=`Estimated market range: ${s.market_range}. Goal: ${s.goal} (figures are AI estimates, verify with real salary data.)`;bubble('recruiter',s.opening_message);$('btnSay').disabled=false
   }catch(e){profErr(e.message)}});
@@ -672,6 +681,7 @@ const SEEN='ip_seen';
 const endGuide=()=>{document.body.classList.remove('guided');try{localStorage.setItem(SEEN,'1')}catch(e){}};
 try{if(!localStorage.getItem(SEEN)&&!/[?&]full=1/.test(location.search))document.body.classList.add('guided')}catch(e){}
 $('guideAll').onclick=e=>{e.preventDefault();endGuide()};
+$('guideSkip').onclick=()=>{endGuide();$('tabs').scrollIntoView({behavior:'smooth'})};
 $('btnPrep').addEventListener('click',()=>{if(document.body.classList.contains('guided')){const iv=setInterval(()=>{if(!$('btnPrep').disabled){clearInterval(iv);if($('prepOut').innerHTML.trim()){endGuide();$('prepOut').scrollIntoView({behavior:'smooth'})}}},400);setTimeout(()=>clearInterval(iv),90000)}});
 
 // ---- waitlist
