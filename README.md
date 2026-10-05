@@ -1,4 +1,6 @@
-# InterviewPilot
+# MockRep
+
+_Formerly InterviewPilot (the name used during the Nebius x NVIDIA Global AI Hackathon submission)._
 
 **AI interview prep for IT candidates and recruiters, built on NVIDIA Nemotron and Nebius Token Factory.**
 
@@ -64,7 +66,7 @@ uvicorn app.main:app --reload
 ```
 Without `NEBIUS_API_KEY` the app runs in demo mode with canned replies so the UI and tests work offline. Override models with `FAST_MODEL` and `STRONG_MODEL`. Other settings: `LLM_CONCURRENCY` (default 8), `RATE_LIMIT_PER_MIN` (default 60), `INTERVIEWPILOT_DB`, `CORS_ORIGINS`.
 
-Docker: `docker build -t interviewpilot . && docker run -p 7860:7860 -e NEBIUS_API_KEY=... interviewpilot`
+Docker: `docker build -t mockrep . && docker run -p 7860:7860 -e NEBIUS_API_KEY=... mockrep`
 
 ## API
 - `POST /api/detect-country` - detect US / India / Other from resume and JD
@@ -98,11 +100,11 @@ AI feedback and salary figures are estimates, not guarantees. The free demo host
 - **Authorization:** every history route is scoped by the logged-in user id in the SQL (`WHERE id=? AND user_id=?`), so changing an ID returns 404. Interview sessions use unguessable 96-bit IDs. Cookies are HttpOnly, SameSite=Lax, Secure on HTTPS. All SQL is parameterized. All model and user text is HTML-escaped before display, and the app sends CSP, X-Frame-Options, nosniff, Referrer-Policy and HSTS headers.
 
 ## Roadmap
-InterviewPilot is built for educated professionals in India and the US. The live app stays fully free and open (no payment, no paywall) through the hackathon judging period ending Dec 15, 2026.
+MockRep is built for educated professionals in India and the US. The live app stays fully free and open (no payment, no paywall) through the hackathon judging period ending Dec 15, 2026.
 
 Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs. Not built yet; no payment code exists in this repository.
 
-Planned rename: the product is planned to be renamed MockRep after the hackathon (around Dec 15, 2026). Target domains are mockrep.com and mockrep.in, and the social handle pattern is @getmockrep. The live app and this repository stay named InterviewPilot until the hackathon judging ends. Domains are not registered yet.
+Rename: the product was called InterviewPilot during the hackathon build and is now MockRep (renamed Oct 5, 2026, before the Oct 30 deadline). Target domains are mockrep.com and mockrep.in (not registered yet), and the social handle pattern is @getmockrep. The live URL stays the Render address until a domain is bought.
 
 When paid plans launch: add trial reminders (notify before any trial converts to billing) and a clear auto-renewal disclosure (price, renewal date, how to cancel) before payment, and update the Privacy Policy. Documentation only for now.
 
@@ -115,7 +117,7 @@ Pricing rule (documentation only):
 - The $49 tier has no card-country requirement. Indians living abroad, including those with Indian cards, pay $49 (for example via Stripe).
 - IP location is not a guarantee of physical location. This is an eligibility rule, not an anti-abuse guarantee; a small amount of VPN leakage is accepted at this scale.
 
-Business structure plan (documentation only): InterviewPilot stays the author's personal product, separate from any other company. Payments start with an individual (unregistered) Razorpay account for India and Lemon Squeezy for international customers. After roughly 100 paying customers, the author plans to register a One Person Company (OPC) and move the business under it.
+Business structure plan (documentation only): MockRep stays the author's personal product, separate from any other company. Payments start with an individual (unregistered) Razorpay account for India and Lemon Squeezy for international customers. After roughly 100 paying customers, the author plans to register a One Person Company (OPC) and move the business under it.
 **Payment security rule (applies to the future paid plan):** every price calculation and all payment verification happens strictly on the server. The client only asks to start a checkout for a plan name; the server chooses the amount and currency, creates the Razorpay order or Lemon Squeezy checkout itself, and unlocks a plan only after verifying the Razorpay payment signature (HMAC-SHA256 of order id and payment id with the secret key) or the Lemon Squeezy webhook signature. Amounts, plan state and country are never trusted from the browser, webhooks are idempotent, and no card data ever touches our servers.
 
 ## License
