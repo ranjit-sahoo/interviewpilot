@@ -502,6 +502,7 @@ def company_list():
 class AuthIn(BaseModel):
     email: str = Field(max_length=320)
     password: str = Field(max_length=200)
+    agree: bool | None = None
 
 
 class SaveIn(BaseModel):
@@ -514,6 +515,8 @@ class SaveIn(BaseModel):
 def auth_register(body: AuthIn, request: Request):
     if not _signup_limiter.check(client_key(request)):
         raise HTTPException(429, "Too many sign-ups from this network today. Please try again later.")
+    if body.agree is False:
+        raise HTTPException(400, "Please agree to the Terms and Privacy Policy to create an account.")
     try:
         user, token = accounts.register(body.email, body.password)
     except ValueError as e:
@@ -628,7 +631,7 @@ def robots():
 @app.get("/sitemap.xml")
 def sitemap():
     base = PUBLIC_BASE.rstrip("/")
-    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/privacy"))
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/privacy", "/terms", "/cookies"))
     xml = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n'
     return Response(xml, media_type="application/xml")
 
@@ -636,6 +639,16 @@ def sitemap():
 @app.get("/privacy")
 def privacy():
     return FileResponse(os.path.join(STATIC, "privacy.html"), media_type="text/html")
+
+
+@app.get("/terms")
+def terms():
+    return FileResponse(os.path.join(STATIC, "terms.html"), media_type="text/html")
+
+
+@app.get("/cookies")
+def cookies_page():
+    return FileResponse(os.path.join(STATIC, "cookies.html"), media_type="text/html")
 
 
 @app.get("/")
