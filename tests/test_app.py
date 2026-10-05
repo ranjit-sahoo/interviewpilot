@@ -689,6 +689,6 @@ def _tiny_pdf(text):
 
 
 def test_pdf_upload_extracts_text():
-    r = c.post("/api/extract", files={"file": ("cv.pdf", _tiny_pdf("Priya QA engineer Pune"), "application/pdf")})
-    assert r.status_code == 200 and "Priya QA engineer Pune" in r.json()["text"]
+    r = c.post("/api/extract", files={"file": ("cv.pdf", _tiny_pdf("Priya Sharma QA engineer in Pune with Selenium"), "application/pdf")})
+    assert r.status_code == 200 and "Priya Sharma QA engineer in Pune" in r.json()["text"]
     assert c.post("/api/extract", files={"file": ("bad.pdf", b"%PDF-1.4 nonsense", "application/pdf")}).status_code == 400
