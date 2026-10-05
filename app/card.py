@@ -113,8 +113,8 @@ def render_png(p: dict) -> bytes:
 
     # brand
     d.rounded_rectangle([60 * S, 48 * S, 112 * S, 100 * S], radius=14 * S, fill="#4a76ee")
-    d.text((86 * S, 75 * S), "IP", font=f(24, True), fill="white", anchor="mm")
-    d.text((128 * S, 75 * S), "InterviewPilot", font=f(30, True), fill="#e8edff", anchor="lm")
+    d.text((86 * S, 75 * S), "MR", font=f(24, True), fill="white", anchor="mm")
+    d.text((128 * S, 75 * S), "MockRep", font=f(30, True), fill="#e8edff", anchor="lm")
     tag = {"US": "US market", "India": "India market"}.get(p.get("c"), "Global")
     lvl = {"fresher": "Fresher level", "experienced": "Experienced level", "brutal": "Brutal level"}.get(p.get("l"), "")
     chip = tag + ("  |  " + lvl if lvl else "")
@@ -175,7 +175,7 @@ def render_png(p: dict) -> bytes:
 def page(p: dict, token: str, base: str) -> str:
     e = html.escape
     title = f"{e(p.get('n') or 'A candidate')} scored {p['s']:.1f}/5 in a mock {e(p.get('r') or '')} interview"
-    desc = f"{verdict(p['s'])}. Practice your own AI mock interview, free, with InterviewPilot."
+    desc = f"{verdict(p['s'])}. Practice your own AI mock interview, free, with MockRep."
     img = f"{base}/c/{token}.png"
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title}</title><meta name="description" content="{e(desc)}">
@@ -186,4 +186,4 @@ def page(p: dict, token: str, base: str) -> str:
 img{{max-width:100%;width:900px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}}
 a.b{{display:inline-block;margin:22px 0;padding:14px 26px;background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;border-radius:12px;text-decoration:none;font-weight:700}}</style></head>
 <body><h1 style="font-size:22px">{title}</h1><img src="{img}" alt="Mock interview score card: {p['s']:.1f} out of 5"><br>
-<a class="b" href="{base}/">Try your own free mock interview</a><p style="color:#9fb0e6">InterviewPilot - AI interview coach for India and US candidates &middot; <a href="/privacy" style="color:#9fb0e6">Privacy Policy</a></p></body></html>"""
+<a class="b" href="{base}/">Try your own free mock interview</a><p style="color:#9fb0e6">MockRep - AI interview coach for India and US candidates &middot; <a href="/privacy" style="color:#9fb0e6">Privacy Policy</a></p></body></html>"""
