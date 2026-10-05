@@ -65,7 +65,7 @@ async def security_headers(request: Request, call_next):
     h.setdefault("Strict-Transport-Security", "max-age=31536000")
     h.setdefault(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; "
         "connect-src 'self'; font-src 'self' data:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; "
         "form-action 'self'; frame-ancestors 'none'",
     )
@@ -464,11 +464,8 @@ def company_brief(body: BriefIn):
 
 
 def _base(request: Request) -> str:
-    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("host") or request.url.netloc
-    if proto not in ("http", "https") or not re.fullmatch(r"[A-Za-z0-9.\-]{1,100}(:\d{1,5})?", host):
-        return PUBLIC_BASE
-    return f"{proto}://{host}"
+    # Always the configured public address. The Host header is client-supplied, so never build links from it.
+    return PUBLIC_BASE.rstrip("/")
 
 
 @app.post("/api/session/{sid}/card", dependencies=LIMITED)
@@ -612,6 +609,11 @@ def history_delete(iid: str, u=Depends(need_user)):
 def service_worker():
     # Served from the root so its scope covers the whole app.
     return FileResponse(os.path.join(STATIC, "sw.js"), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/privacy")
+def privacy():
+    return FileResponse(os.path.join(STATIC, "privacy.html"), media_type="text/html")
 
 
 @app.get("/")
