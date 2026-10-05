@@ -11,6 +11,9 @@ from app import accounts, bank, brief, builder, card, coding, companies, llm, pr
 from app.guard import FailLimiter, RateLimiter, client_key, rate_limit
 
 app = FastAPI(title="InterviewPilot", docs_url=None, redoc_url=None, openapi_url=None)
+from app import analytics as _analytics  # noqa: E402
+
+_analytics.install(app)
 
 # A future mobile shell or separate web front end can call the API cross-origin.
 # Set CORS_ORIGINS="https://app.example.com,capacitor://localhost" to enable; off by default.
@@ -617,4 +620,3 @@ def index():
 
 
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
-
