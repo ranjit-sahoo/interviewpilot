@@ -4,7 +4,7 @@ _Formerly InterviewPilot (the name used during the Nebius x NVIDIA Global AI Hac
 
 **AI interview prep for IT candidates and recruiters, built on NVIDIA Nemotron and Nebius Token Factory.**
 
-Live demo: https://interviewpilot-bdzx.onrender.com (free hosting: the first load after idle can take about a minute)
+Live demo: https://mockrep.onrender.com (free hosting: the first load after idle can take about a minute)
 
 Built for the Nebius x NVIDIA Global AI Hackathon, track **Best Apps and Agents**.
 
@@ -104,7 +104,7 @@ MockRep is built for educated professionals in India and the US. The live app st
 
 Planned after Dec 15, 2026: a paid yearly plan for saved history and unlimited prep packs. Not built yet; no payment code exists in this repository.
 
-Rename: the product was called InterviewPilot during the hackathon build and is now MockRep (renamed Oct 5, 2026, before the Oct 30 deadline). Target domains are mockrep.com and mockrep.in (not registered yet), and the social handle pattern is @getmockrep. The live URL stays the Render address until a domain is bought.
+Rename: the product was called InterviewPilot during the hackathon build and is now MockRep (renamed Oct 5, 2026, before the Oct 30 deadline). Target domains are mockrep.com and mockrep.in (not registered yet), and the social handle pattern is @getmockrep. The live URL is the Render address https://mockrep.onrender.com (the old interviewpilot-bdzx address was retired on Oct 5, 2026) until a domain is bought.
 
 When paid plans launch: add trial reminders (notify before any trial converts to billing) and a clear auto-renewal disclosure (price, renewal date, how to cancel) before payment, and update the Privacy Policy. Documentation only for now.
 
