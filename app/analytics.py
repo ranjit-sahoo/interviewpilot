@@ -157,13 +157,13 @@ def render_html(s: dict) -> str:
     )
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>Usage - InterviewPilot</title><meta name='robots' content='noindex'>"
+        "<title>Usage - MockRep</title><meta name='robots' content='noindex'>"
         "<style>body{font:15px system-ui,sans-serif;margin:24px;max-width:1100px;color:#111}h1{font-size:22px}"
         ".g{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}.c{border:1px solid #ddd;border-radius:10px;padding:12px 16px;min-width:120px}"
         ".c b{display:block;font-size:26px}.c span{color:#555;font-size:13px}table{border-collapse:collapse;width:100%;font-size:13px}"
         "th,td{border-bottom:1px solid #eee;padding:6px 8px;text-align:right}th:first-child,td:first-child{text-align:left}"
         ".w{overflow-x:auto}p{color:#555;font-size:13px}</style></head><body>"
-        f"<h1>InterviewPilot usage (last {int(s['days'])} days, UTC)</h1>"
+        f"<h1>MockRep usage (last {int(s['days'])} days, UTC)</h1>"
         f"<div class='g'>{cards}<div class='c'><b>{int(s['visitor_days'])}</b><span>Unique visitor-days</span></div></div>"
         f"<div class='w'><table><thead><tr><th>Day</th><th>Visitors</th>{head}</tr></thead><tbody>{rows}</tbody></table></div>"
         "<p>First-party counts only: no cookies, no third-party scripts, no IP addresses stored. A visitor is counted once per day "
