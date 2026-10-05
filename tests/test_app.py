@@ -546,3 +546,78 @@ def test_followup_naming_unsaid_thing_is_dropped(monkeypatch):
     d = c.post("/api/session", json={"resume": "QA engineer with Selenium and TestNG experience " * 3, "role": "QA", "country": "US", "followups": True}).json()
     r = c.post(f"/api/session/{d['session_id']}/answer", json={"answer": "I built a Selenium suite with TestNG."}).json()
     assert "followup" not in r or not r["followup"]
+
+
+def _new_sid():
+    d = c.post("/api/session", json={"resume": RESUME, "role": "QA Engineer", "country": "US", "followups": False}).json()
+    return d["session_id"]
+
+
+def test_retry_rescores_without_advancing(monkeypatch):
+    from app import llm
+
+    sid = _new_sid()
+    scores = iter([2, 4, 3, 5])
+
+    def fake(task, system, user, model=None):
+        if task == "turn":
+            n = next(scores)
+            return {"scores": {"clarity": n, "depth": n, "correctness": n, "star": n}, "feedback": "ok", "stronger_answer": "x",
+                    "tips": [], "communication": {"fluency": 3}, "followup": ""}
+        if task == "report":
+            return {"overall_score": 4, "summary": "s", "strengths": [], "gaps": [], "plan_7_days": []}
+        raise llm.LLMError("unused in this test")
+
+    monkeypatch.setattr(llm, "chat_json", fake)
+    r1 = c.post(f"/api/session/{sid}/answer", json={"answer": "I tested login flows."}).json()
+    assert r1["feedback"]["scores"]["depth"] == 2
+    r2 = c.post(f"/api/session/{sid}/retry", json={"answer": "I tested login flows with Selenium and cut failures."}).json()
+    assert r2["new_avg"] > r2["previous_avg"] and r2["attempt"] == 2 and r2["retries_left"] == 2
+    assert r2["first_scores"]["depth"] == 2
+    # a worse retry never lowers the kept score; still on the same question
+    r3 = c.post(f"/api/session/{sid}/retry", json={"answer": "Worse one."}).json()
+    assert r3["new_avg"] < r3["previous_avg"]
+    r4 = c.post(f"/api/session/{sid}/retry", json={"answer": "Best one now."}).json()
+    assert r4["retries_left"] == 0
+    assert c.post(f"/api/session/{sid}/retry", json={"answer": "one more"}).status_code == 400
+    from app import services
+
+    assert services.skill_scores(sid)["depth"] == 5.0
+    assert c.post(f"/api/session/{sid}/retry", json={"answer": ""}).status_code == 400
+    assert c.post("/api/session/nope/retry", json={"answer": "x"}).status_code == 404
+
+
+def test_retry_needs_an_answer_first_and_not_after_followup(monkeypatch):
+    sid = _new_sid()
+    assert c.post(f"/api/session/{sid}/retry", json={"answer": "x"}).status_code == 400
+
+
+def test_progress_recorded_for_logged_in_only():
+    from fastapi.testclient import TestClient
+
+    u = TestClient(app)
+    assert u.get("/api/progress").status_code == 401
+    assert u.post("/api/auth/register", json={"email": "prog@example.com", "password": "longenough1"}).status_code == 200
+    sid = u.post("/api/session", json={"resume": RESUME, "role": "QA Engineer", "country": "US", "followups": False}).json()["session_id"]
+    u.post(f"/api/session/{sid}/answer", json={"answer": "I built a Selenium suite."})
+    assert u.get(f"/api/session/{sid}/report").status_code == 200
+    u.get(f"/api/session/{sid}/report")  # second read must not duplicate
+    pts = u.get("/api/progress").json()["points"]
+    assert len(pts) == 1 and pts[0]["role"] == "QA Engineer" and "depth" in pts[0]["scores"]
+    # a guest report records nothing and still works
+    g = _new_sid()
+    c.post(f"/api/session/{g}/answer", json={"answer": "I built a suite."})
+    assert c.get(f"/api/session/{g}/report").status_code == 200
+    # progress is deleted with the account
+    assert u.delete("/api/auth/account").status_code == 200
+    from app import accounts
+
+    with accounts.Conn() as cn:
+        assert cn.run("SELECT id FROM progress WHERE id=?", (sid,)) == []
+
+
+def test_waitlist():
+    assert c.post("/api/waitlist", json={"email": "Fan@Example.com"}).json() == {"ok": True, "new": True}
+    assert c.post("/api/waitlist", json={"email": "fan@example.com"}).json() == {"ok": True, "new": False}
+    assert c.post("/api/waitlist", json={"email": "nope"}).status_code == 400
+    assert c.post("/api/waitlist", json={"email": "x" * 300 + "@a.com"}).status_code == 422

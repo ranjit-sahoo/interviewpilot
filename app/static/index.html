@@ -67,7 +67,29 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 .starOut .blk{border-left:3px solid #5b8cff;padding:8px 14px;margin:10px 0;background:var(--card2);border-radius:0 12px 12px 0}
 .say{white-space:pre-wrap;line-height:1.6}.shareRow button,.shareRow a{margin:6px 8px 0 0}
 @media(max-width:640px){.star4{grid-template-columns:1fr}}
-</style></head><body><div class="wrap">
+#wake{position:fixed;left:0;right:0;top:0;z-index:50;background:#ffb84d;color:#2a1b00;text-align:center;padding:10px 14px;font-weight:700}
+#wake.hide{display:none}
+.cmp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
+.up{color:#a8e04a;font-weight:800}.down{color:var(--bad);font-weight:800}
+.chart{width:100%;height:auto;background:var(--card2);border:1px solid var(--line);border-radius:12px}
+.legend span{display:inline-block;margin:6px 14px 0 0;font-size:13.5px;color:var(--mute)}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+#prArea{display:none}
+body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #t-review,body.guided #t-match,body.guided #t-interview,body.guided #t-star,body.guided #t-brief,body.guided #t-nego,body.guided #t-bank,body.guided #t-code,body.guided #t-builder,body.guided #t-recruiter,body.guided #t-history,body.guided #prepLead{display:none}
+#guide{display:none}body.guided #guide{display:block}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}.steps span{border:1px solid var(--line);background:var(--card2);border-radius:99px;padding:4px 12px;font-size:13.5px;color:var(--mute)}.steps b{color:var(--acc)}
+.wl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.wl input{flex:1;min-width:200px}
+@media print{body.pr .wrap,body.pr #wake{display:none!important}body.pr #prArea{display:block;color:#111;background:#fff;font:13.5px/1.5 system-ui,Arial,sans-serif}body.pr #prArea *{visibility:visible;color:#111}
+ body.pr #prArea h1{font-size:22px;margin:0 0 4px}body.pr #prArea h2{font-size:15px;margin:16px 0 4px;border-bottom:1.5px solid #333}body.pr #prArea p,body.pr #prArea li{margin:3px 0}body.pr #prArea .q{break-inside:avoid;margin:10px 0}}
+@media(max-width:640px){
+ body{font-size:16px}.wrap{padding:16px 12px 70px}.hero{padding-top:12px}.sub{font-size:15.5px}
+ button{padding:13px 18px;min-height:46px}.card button:not(.tabs button){max-width:100%}
+ .toggle{display:flex;margin:12px 0 0;width:100%}.toggle button{flex:1;min-height:46px}
+ .mic button{flex:1 1 140px}#micBar{gap:8px}
+ .shareRow{display:flex;flex-direction:column}.shareRow a,.shareRow button{width:100%;margin:6px 0 0}.shareRow a button{width:100%}
+ .bubble{max-width:95%}.chips button{padding:10px 18px}.tabs{top:4px}.feat span{font-size:12.5px}
+ #cards img{max-width:100%}.cmp{flex-direction:column;align-items:flex-start}
+}
+</style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
@@ -79,6 +101,9 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <div id="acctForm" class="hide"><label for="acEmail">Email</label><input type="email" id="acEmail" autocomplete="email" maxlength="200">
     <label for="acPw">Password (8+ characters)</label><input type="password" id="acPw" autocomplete="current-password" maxlength="200">
     <button id="acLogin">Log in</button><button id="acReg" class="alt">Create account</button><div id="acErr" class="err" role="alert"></div></div></div>
+
+<div class="card" id="guide"><div class="steps"><span><b>1</b> Your target role</span><span><b>2</b> Paste your resume</span><span><b>3</b> Add the job description (optional)</span><span><b>4</b> Generate</span></div>
+  <p class="note" style="margin:8px 0 0">Free. No login needed. You get questions tailored to your resume with model answers in about 10 seconds. <a href="#" id="guideAll" style="color:var(--acc2)">Show me all tools</a></p></div>
 
 <div class="card" id="profile">
   <label for="role">Target role</label><input type="text" id="role" maxlength="200" placeholder="e.g. QA Automation Engineer, Business Analyst, Java Developer">
@@ -96,7 +121,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <button data-t="interview">Mock Interview</button><button data-t="star">STAR Builder</button><button data-t="brief">Company Brief</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
 </div>
 
-<section id="t-prep" class="card"><p class="note">Your resume, your job description, your market. Get the questions you are most likely to face, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
+<section id="t-prep" class="card"><p class="note" id="prepLead">Your resume, your job description, your market. Get the questions you are most likely to face, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
   <button id="btnPrep">Generate my interview prep pack</button><div id="prepErr" class="err" role="alert"></div><div id="prepOut"></div></section>
 
 <section id="t-review" class="card hide"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
@@ -202,7 +227,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <div id="rbPrev" class="classic"></div>
 </section>
 
-<section id="t-history" class="card hide"><p class="note" id="histNote"></p><div id="histList"></div><div id="histView"></div>
+<section id="t-history" class="card hide"><h3 style="margin-top:0">Your progress</h3><div id="progBox"></div><h3>Saved work</h3><p class="note" id="histNote"></p><div id="histList"></div><div id="histView"></div>
   <p><button id="histDel" class="ghost hide">Delete my account and all saved data</button></p></section>
 
 <section id="t-recruiter" class="card hide">
@@ -211,6 +236,9 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
   <button id="btnScreen" class="alt">Screen candidates</button><span id="scrBusy" class="pill hide">screening...</span>
   <div id="scrErr" class="err" role="alert"></div><div id="scrOut"></div>
 </section>
+<section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">InterviewPilot stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
+  <div class="wl"><input type="email" id="wlEmail" maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
+<div id="prArea"></div>
 <div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees.</div>
 </div>
 <script>
@@ -219,7 +247,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ul=a=>(a&&a.length)?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'';
 let fuOn=true,country=null,countryTouched=false,detKey='',sid=null,nsid=null,voice=false;
-fetch('/health').then(r=>r.json()).then(h=>{if(h.mock_mode)$('mock').classList.remove('hide')}).catch(()=>{});
+const wakeT=setTimeout(()=>$('wake').classList.remove('hide'),3000);
+fetch('/health').then(r=>r.json()).then(h=>{if(h.mock_mode)$('mock').classList.remove('hide')}).catch(()=>{}).finally(()=>{clearTimeout(wakeT);$('wake').classList.add('hide')});
 
 async function api(url,opts){
   let r;try{r=await fetch(url,opts)}catch(e){throw new Error('Network problem. Check your connection and try again.')}
@@ -360,6 +389,7 @@ function showPrep(d,c,jdUsed,saved){
   if(d.focus.length)h+='<h3>Revise these first</h3>'+ul(d.focus);
   h+='<h3>Likely questions with model answers</h3>'+d.questions.map(qCard).join('');
   if(d.coding_profile)h+='<div id="prepCode"><h3>Coding questions for your profile</h3>'+(c?codeHtml(c):'<p class="note">Preparing coding questions...</p>')+'</div>';
+  h+='<p><button class="ghost" data-pdf="prep">Download prep pack as PDF</button></p>';
   if(!saved)h+='<p><button class="ghost" id="saveBtn" data-save="prep">Save this pack to my history</button></p>';
   $('prepOut').innerHTML=h;wireCode();
 }
@@ -377,7 +407,7 @@ $('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10 s)...',
 
 // ---- accounts and history
 let me=null,persistent=false,lastReview=null;
-async function refreshMe(){try{const j=await api('/api/auth/me');me=j.user;persistent=j.persistent}catch(e){me=null}
+async function refreshMe(){try{const j=await api('/api/auth/me');me=j.user;persistent=j.persistent;if(me)endGuide()}catch(e){me=null}
   $('acctInfo').textContent=me?`Logged in as ${me.email}`:'Guest mode: everything works without an account. Log in only if you want to save your work.';
   $('acctOpen').classList.toggle('hide',!!me);$('acctHist').classList.toggle('hide',!me);$('acctOut').classList.toggle('hide',!me);$('tabHist').classList.toggle('hide',!me);
   if(me)$('acctForm').classList.add('hide')}
@@ -400,7 +430,7 @@ document.body.addEventListener('click',e=>{const k=e.target.dataset&&e.target.da
 const fmt=t=>new Date(t*1000).toLocaleDateString();
 async function histLoad(){
   $('histNote').textContent=persistent?'Your saved work. Only you can see it.':'Your saved work. Note: storage is temporary on this server right now and may reset.';
-  $('histDel').classList.remove('hide');$('histView').innerHTML='';
+  $('histDel').classList.remove('hide');$('histView').innerHTML='';progLoad();
   try{const j=await api('/api/history');$('histList').innerHTML=j.items.length?j.items.map(i=>`<div class="cand"><span class="pill">${esc(i.kind)}</span><span class="pill">${fmt(i.created)}</span><p><b>${esc(i.title)}</b></p><button class="alt" data-open="${esc(i.id)}">Open</button><button class="ghost" data-rm="${esc(i.id)}">Delete</button></div>`).join(''):'<p class="note">Nothing saved yet. Use "Save" on a prep pack, code review or resume.</p>'}
   catch(e){$('histList').innerHTML=`<div class="err">${esc(e.message)}</div>`}}
 $('histList').onclick=async e=>{const d=e.target.dataset||{};
@@ -496,18 +526,33 @@ $('btnStart').onclick=()=>busy($('btnStart'),'Preparing questions...',async()=>{
   try{const d=await post('/api/session',{resume:resumeText(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked});
     sid=d.session_id;fuOn=$('ivFu').checked;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
   }catch(e){profErr(e.message)}});
-function showQ(q,n,t,fu){if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
+function showQ(q,n,t,fu){curFu=!!fu;retryMode=false;$('btnAns').textContent='Submit answer';if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
   $('interview').scrollIntoView({behavior:'smooth',block:'start'});speak(q.question,()=>{if(voice&&!listening)startMic()})}
-$('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textContent='';
-  const text=$('ans').value.trim();if(!text){$('ansErr').textContent='Give an answer first.';return}
-  $('btnAns').disabled=true;$('busy').classList.remove('hide');
-  try{const d=await post(`/api/session/${sid}/answer`,{answer:text});const f=d.feedback,s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};
-    const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
-    $('fb').innerHTML=`<h3>Feedback</h3><div class="bars">${['clarity','depth','correctness','star'].map(k=>`<div class="bar"><b>${esc(s[k])}/5</b>${k==='star'?'STAR':k}</div>`).join('')}</div>
+let curFu=false,wasFu=false,lastText='',retryMode=false,retryInfo={left:3};
+function fbHtml(d,f){const s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
+  return `<h3>Feedback</h3><div class="bars">${['clarity','depth','correctness','star'].map(k=>`<div class="bar"><b>${esc(s[k])}/5</b>${k==='star'?'STAR':k}</div>`).join('')}</div>
       <p>${esc(f.feedback)}</p><div class="w g"><b>A stronger answer</b><br>${esc(f.stronger_answer)}${f.stronger_answer_note?`<p class="note">${esc(f.stronger_answer_note)}</p>`:''}</div>${ul(f.tips)}
       <h3>Communication</h3><p><span class="pill">Fluency ${esc(cm.fluency)}/5</span><span class="pill">${esc(cm.tone)}</span><span class="pill">${esc(m.word_count)} words</span><span class="pill">${esc(m.filler_total||0)} filler words</span></p>
       ${fl?`<p class="note">Fillers: ${fl}</p>`:''}${m.too_short?'<p class="note">Answer was short. Aim for 60-90 seconds with an example.</p>':''}${ul(cm.language_notes)}${cm.tip?`<p><b>Tip:</b> ${esc(cm.tip)}</p>`:''}
-      ${(!fuOn&&f.followup)?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}${d.difficulty?`<p class="pill">Interviewer made the next question ${d.difficulty==='harder'?'harder: you answered strongly':'a little easier: let us build up'}</p>`:''}<div id="nextArea"></div>`;
+      ${(!fuOn&&f.followup)?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}${d.difficulty?`<p class="pill">Interviewer made the next question ${d.difficulty==='harder'?'harder: you answered strongly':'a little easier: let us build up'}</p>`:''}`}
+function drawRetry(){const a=$('retryArea');if(!a)return;
+  if(voice||wasFu||retryInfo.left<=0){a.innerHTML=retryInfo.left<=0&&!wasFu?'<p class="note">You used all 3 retries on this question. Move on when you are ready.</p>':'';return}
+  a.innerHTML=`<p><button class="ghost" id="btnRetry">Try this answer again${retryInfo.left<3?` (${retryInfo.left} left)`:''}</button></p><div class="note">Improve it using the feedback, then see how your score changes.</div>`;
+  $('btnRetry').onclick=()=>{retryMode=true;$('ans').value=lastText;$('btnAns').disabled=false;$('btnAns').textContent='Score my new attempt';$('ans').focus();$('ans').scrollIntoView({behavior:'smooth',block:'center'});a.innerHTML='<p class="note">Edit your answer above, then press "Score my new attempt".</p>'}}
+function cmpHtml(r){const d=(r.new_avg-r.previous_avg),fs=r.first_scores||{};const first=['clarity','depth','correctness'].map(k=>+fs[k]).filter(x=>!isNaN(x));const a0=first.length?first.reduce((x,y)=>x+y,0)/first.length:r.previous_avg;
+  const tot=r.new_avg-a0;
+  return `<div class="cmp"><b>Attempt ${r.attempt}</b><span>Average ${a0.toFixed(1)} → <b>${r.new_avg.toFixed(1)}</b> out of 5</span><span class="${tot>0.04?'up':tot<-0.04?'down':''}">${tot>0.04?'▲ +'+tot.toFixed(1)+' better than your first answer':tot<-0.04?'▼ '+tot.toFixed(1)+' lower than your first answer (your best score is kept)':'same as your first answer'}</span></div>`}
+$('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textContent='';
+  const text=$('ans').value.trim();if(!text){$('ansErr').textContent='Give an answer first.';return}
+  $('btnAns').disabled=true;$('busy').classList.remove('hide');
+  if(retryMode){try{const r=await post(`/api/session/${sid}/retry`,{answer:text});retryMode=false;lastText=text;retryInfo.left=r.retries_left;
+      $('fbBody').innerHTML=cmpHtml(r)+fbHtml({},r.feedback);$('btnAns').textContent='Submit answer';$('btnAns').disabled=true;drawRetry();$('fbBody').scrollIntoView({behavior:'smooth',block:'start'})}
+    catch(e){$('ansErr').textContent=e.message;$('btnAns').disabled=false}finally{$('busy').classList.add('hide')}return}
+  try{const d=await post(`/api/session/${sid}/answer`,{answer:text});const f=d.feedback,s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};
+    const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
+    wasFu=curFu;lastText=text;retryInfo={left:3};
+    $('fb').innerHTML=`<div id="fbBody">${fbHtml(d,f)}</div><div id="retryArea"></div><div id="nextArea"></div>`;
+    drawRetry();
     $('busy').classList.add('hide');
     if(d.finished){$('btnAns').disabled=true;$('nextArea').innerHTML='<button id="btnRep">See my session report</button>';$('btnRep').onclick=loadReport}
     else if(d.followup){$('nextArea').innerHTML='<p class="note">The interviewer wants to dig deeper into your answer.</p><button id="btnNext">Answer the follow-up</button>';let went=false;
@@ -518,12 +563,12 @@ $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textCont
       $('btnNext').onclick=()=>{if(TTS)TTS.cancel();go()};
       if(voice)speak('Feedback. '+(f.feedback||'')+' Next question.',go)}
   }catch(e){$('ansErr').textContent=e.message;$('btnAns').disabled=false;$('busy').classList.add('hide')}};
-async function loadReport(){$('ansErr').textContent='';
-  try{const r=await api(`/api/session/${sid}/report`);const el=$('report');el.classList.remove('hide');
+async function loadReport(){$('ansErr').textContent='';const ra=$('retryArea');if(ra)ra.innerHTML='';
+  try{const r=await api(`/api/session/${sid}/report`);lastReport=r;const el=$('report');el.classList.remove('hide');
   el.innerHTML=`<h2>Session report <span class="score">${esc(r.overall_score)}/5</span></h2><p>${esc(r.summary)}</p>
    ${r.communication_summary?`<h3>Communication</h3><p>${esc(r.communication_summary)}</p>`:''}
    <h3>Strengths</h3>${ul(r.strengths)}<h3>Gaps</h3>${ul(r.gaps)}
-   <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol>`;
+   <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol><p><button class="ghost" data-pdf="report">Download report as PDF</button></p>${me?'<p class="note">Your scores (not your answers) were added to My History > Your progress.</p>':'<p class="note">Log in to track your scores over time.</p>'}`;
   el.insertAdjacentHTML('beforeend',`<h3>Share your result</h3><p class="note">Create a clean score card for LinkedIn or WhatsApp. It shows only your score, role and strengths, never your resume.</p>
    <input type="text" id="cardName" maxlength="40" placeholder="Your name on the card (optional)"><button id="btnCard" class="alt">Create share card</button><div id="cardOut"></div>`);
   $('btnCard').onclick=()=>busy($('btnCard'),'Designing your card...',async()=>{
@@ -531,7 +576,8 @@ async function loadReport(){$('ansErr').textContent='';
       $('cardOut').innerHTML=`<img src="${esc(c.image)}" alt="Your score card" style="max-width:100%;border-radius:14px;margin-top:12px"><div class="shareRow">
         <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(c.url)}" target="_blank" rel="noopener"><button type="button">Share on LinkedIn</button></a>
         <a href="https://wa.me/?text=${t}${encodeURIComponent(c.url)}" target="_blank" rel="noopener"><button type="button" class="alt">Share on WhatsApp</button></a>
-        <button type="button" class="ghost" id="cardCopy">Copy link</button><a href="${esc(c.image)}" download="interviewpilot-score.png"><button type="button" class="ghost">Download image</button></a></div>`;
+        ${navigator.share?'<button type="button" class="alt" id="cardShare">Share…</button>':''}<button type="button" class="ghost" id="cardCopy">Copy link</button><a href="${esc(c.image)}" download="interviewpilot-score.png"><button type="button" class="ghost">Download image</button></a></div>`;
+      if($('cardShare'))$('cardShare').onclick=()=>navigator.share({title:'My InterviewPilot score',text:`I scored ${c.score}/5 in an AI mock interview on InterviewPilot.`,url:c.url}).catch(()=>{});
       $('cardCopy').onclick=async e=>{try{await navigator.clipboard.writeText(c.url);e.target.textContent='Copied'}catch(_){prompt('Copy this link',c.url)}}}
     catch(e){$('ansErr').textContent=e.message}});
   el.scrollIntoView({behavior:'smooth'})}catch(e){$('ansErr').textContent=e.message}}
@@ -595,4 +641,40 @@ $('btnScreen').onclick=async()=>{$('scrErr').textContent='';profErr('');$('btnSc
       <br>${esc(r.summary)}<br><b>Strengths</b>${ul(r.strengths)}<b>Risks</b>${ul(r.risks)}<b>Phone-screen questions</b>${ul(r.screening_questions)}</div>`).join('')
       +d.failed.map(f=>`<div class="w"><b>${esc(f.name)}</b>: ${esc(f.error)}</div>`).join('')
   }catch(e){$('scrErr').textContent=e.message}$('btnScreen').disabled=false;$('scrBusy').classList.add('hide')};
+
+// ---- progress chart
+const SK=[['clarity','Clarity','#9be000'],['depth','Depth','#5b8cff'],['correctness','Correctness','#ffb84d'],['star','STAR','#ff6b7a'],['fluency','Fluency','#c18bff']];
+function chartSvg(pts){const W=600,H=260,L=36,R=14,T=14,B=34,n=pts.length,x=i=>n===1?(L+W-R)/2:L+i*(W-L-R)/(n-1),y=v=>T+(5-v)*(H-T-B)/4;
+  let g='';for(let v=1;v<=5;v++)g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.09)"/><text x="${L-8}" y="${y(v)+4}" fill="#9aa6c0" font-size="12" text-anchor="end">${v}</text>`;
+  const step=Math.max(1,Math.ceil(n/6));pts.forEach((p,i)=>{if(i%step===0||i===n-1)g+=`<text x="${x(i)}" y="${H-10}" fill="#9aa6c0" font-size="11.5" text-anchor="middle">${esc(fmt(p.created))}</text>`});
+  SK.forEach(([k,,col])=>{const s=pts.map((p,i)=>[i,p.scores[k]]).filter(a=>typeof a[1]==='number');if(!s.length)return;
+    if(s.length>1)g+=`<polyline fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round" points="${s.map(a=>x(a[0])+','+y(a[1])).join(' ')}"/>`;
+    s.forEach(a=>{g+=`<circle cx="${x(a[0])}" cy="${y(a[1])}" r="4" fill="${col}"><title>${esc(k)} ${a[1]}</title></circle>`})});
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Your scores per skill over your mock interviews">${g}</svg><div class="legend">${SK.map(([,l,c])=>`<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>`}
+async function progLoad(){const b=$('progBox');b.innerHTML='<p class="note">Loading...</p>';
+  try{const j=await api('/api/progress'),pts=j.points||[];
+    if(!pts.length){b.innerHTML='<p class="note">Finish a mock interview and open the session report. Your scores per skill will appear here so you can see yourself improve. Only scores are kept, never your answers.</p>';return}
+    const last=pts[pts.length-1],first=pts[0];
+    b.innerHTML=chartSvg(pts)+`<p class="note">${pts.length} session${pts.length>1?'s':''}. Latest overall score: <b>${esc(last.overall??'-')}/5</b>${pts.length>1&&first.overall!=null&&last.overall!=null?` (first: ${esc(first.overall)}/5)`:''}. Only your scores are stored, never your answers or resume.</p>`}
+  catch(e){b.innerHTML=`<div class="err">${esc(e.message)}</div>`}}
+
+// ---- PDF (browser print dialog: choose "Save as PDF")
+let lastReport=null;
+function printDoc(html){$('prArea').innerHTML=html;document.body.classList.add('pr');setTimeout(()=>window.print(),50)}
+window.addEventListener('afterprint',()=>{document.body.classList.remove('pr');$('prArea').innerHTML=''});
+const today=()=>new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+document.body.addEventListener('click',e=>{const k=e.target.dataset&&e.target.dataset.pdf;if(!k)return;
+  if(k==='report'&&lastReport){const r=lastReport;printDoc(`<h1>Interview practice report</h1><p>${esc($('role').value.trim())} - ${esc(today())} - Overall ${esc(r.overall_score)}/5</p><h2>Summary</h2><p>${esc(r.summary)}</p>${r.communication_summary?`<h2>Communication</h2><p>${esc(r.communication_summary)}</p>`:''}<h2>Strengths</h2>${ul(r.strengths)}<h2>Gaps</h2>${ul(r.gaps)}<h2>7-day practice plan</h2><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol><p style="margin-top:18px;color:#555">Made with InterviewPilot. AI feedback is guidance, not a guarantee.</p>`)}
+  if(k==='prep'&&lastPrep){const d=lastPrep.pack;printDoc(`<h1>Interview prep pack: ${esc(lastPrep.role)}</h1><p>${esc(today())} - tailored for the ${esc(d.country)} market</p>${d.focus&&d.focus.length?`<h2>Revise these first</h2>${ul(d.focus)}`:''}<h2>Likely questions with model answers</h2>${d.questions.map((q,i)=>`<div class="q"><p><b>${i+1}. ${esc(q.question)}</b> (${esc(q.type)})</p>${q.why_asked?`<p><i>Why they ask: ${esc(q.why_asked)}</i></p>`:''}<p>${esc(q.model_answer)}</p></div>`).join('')}${lastPrep.coding&&lastPrep.coding.coding_questions&&lastPrep.coding.coding_questions.length?`<h2>Coding questions</h2>${ul(lastPrep.coding.coding_questions.map(c=>(c.title||'')+': '+(c.problem||'')))}`:''}<p style="margin-top:18px;color:#555">Made with InterviewPilot. Replace example details in model answers with your real experience.</p>`)}});
+
+// ---- first-time guided start
+const SEEN='ip_seen';
+const endGuide=()=>{document.body.classList.remove('guided');try{localStorage.setItem(SEEN,'1')}catch(e){}};
+try{if(!localStorage.getItem(SEEN)&&!/[?&]full=1/.test(location.search))document.body.classList.add('guided')}catch(e){}
+$('guideAll').onclick=e=>{e.preventDefault();endGuide()};
+$('btnPrep').addEventListener('click',()=>{if(document.body.classList.contains('guided')){const iv=setInterval(()=>{if(!$('btnPrep').disabled){clearInterval(iv);if($('prepOut').innerHTML.trim()){endGuide();$('prepOut').scrollIntoView({behavior:'smooth'})}}},400);setTimeout(()=>clearInterval(iv),90000)}});
+
+// ---- waitlist
+$('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textContent='';
+  try{const j=await post('/api/waitlist',{email:$('wlEmail').value});$('wlMsg').textContent=j.new?'You are on the list. Thank you!':'You are already on the list. Thank you!';$('wlEmail').value=''}catch(e){$('wlMsg').textContent=e.message}});
 </script></body></html>

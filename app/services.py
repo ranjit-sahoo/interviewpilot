@@ -229,6 +229,65 @@ def answer(sid: str, text: str) -> dict:
     return out
 
 
+MAX_RETRIES = 3
+_SKILLS = ("clarity", "depth", "correctness", "star")
+
+
+def retry(sid: str, text: str) -> dict:
+    """Re-score a better attempt at the last main question. Does not move the interview forward."""
+    with _lock(sid):
+        s = _interview(sid)
+        if "report" in s:
+            raise ValueError("The report is already made. Start a new session to practise more.")
+        if not s["turns"]:
+            raise ValueError("Answer a question first.")
+        t = s["turns"][-1]
+        if t.get("followup"):
+            raise ValueError("You can retry the main question answer, not a follow-up.")
+        tries = t.setdefault("retries", [])
+        if len(tries) >= MAX_RETRIES:
+            raise ValueError("That is 3 retries on this question. Move on to the next one.")
+        q = t["question"]
+        user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
+        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"]), user, model=llm.STRONG_MODEL)
+        if not isinstance(fb, dict):
+            raise llm.LLMError("bad feedback")
+        fb.setdefault("communication", {})
+        fb["communication"]["metrics"] = comms.analyze(text)
+        if invented_details(str(fb.get("stronger_answer") or ""), s["resume"], s["jd"], q["question"], text):
+            fb["stronger_answer_note"] = "This sample includes example details (numbers or names) you did not give. Replace them with your real ones, or leave them out."
+        fb.pop("followup", None)
+        before = _perf(t.get("best") or t["feedback"])
+        tries.append({"answer": text, "feedback": fb})
+        now = _perf(fb)
+        if now >= before:
+            t["best"] = fb
+            t["best_answer"] = text
+        db.save(sid, s)
+    return {
+        "feedback": fb, "attempt": len(tries) + 1, "retries_left": MAX_RETRIES - len(tries),
+        "first_scores": t["feedback"].get("scores"), "previous_avg": round(before, 2), "new_avg": round(now, 2),
+    }
+
+
+def skill_scores(sid: str) -> dict:
+    """Average 1-5 score per skill across the answered main questions (best attempt counts)."""
+    s = _interview(sid)
+    acc = {k: [] for k in (*_SKILLS, "fluency")}
+    for t in s["turns"]:
+        fb = t.get("best") or t["feedback"]
+        for k in _SKILLS:
+            try:
+                acc[k].append(float((fb.get("scores") or {})[k]))
+            except (KeyError, TypeError, ValueError):
+                pass
+        try:
+            acc["fluency"].append(float((fb.get("communication") or {})["fluency"]))
+        except (KeyError, TypeError, ValueError):
+            pass
+    return {k: round(sum(v) / len(v), 2) for k, v in acc.items() if v}
+
+
 def report(sid: str) -> dict:
     with _lock(sid):
         s = _interview(sid)
@@ -237,9 +296,10 @@ def report(sid: str) -> dict:
         if not s["turns"]:
             raise ValueError("answer at least one question first")
         transcript = "\n\n".join(
-            f"Q ({t['question']['type']}): {t['question']['question']}\nA: {t['answer']}\n"
-            f"Scores: {t['feedback'].get('scores')}\nFeedback: {t['feedback'].get('feedback')}\n"
-            f"Speech metrics: {t['feedback']['communication'].get('metrics')}"
+            f"Q ({t['question']['type']}): {t['question']['question']}\nA: {t.get('best_answer') or t['answer']}\n"
+            f"Scores: {(t.get('best') or t['feedback']).get('scores')}\nFeedback: {(t.get('best') or t['feedback']).get('feedback')}\n"
+            f"Speech metrics: {(t.get('best') or t['feedback'])['communication'].get('metrics')}"
+            + (f"\n(Candidate retried this answer {len(t['retries'])} time(s) and improved it.)" if t.get("best") else "")
             for t in s["turns"]
         )
         rep = llm.chat_json(

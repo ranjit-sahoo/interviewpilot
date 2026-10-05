@@ -76,6 +76,7 @@ class Conn:
 
 
 def _schema():
+    _REAL = "DOUBLE PRECISION" if using_postgres() else "REAL"
     return [
         "CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, pw_hash TEXT NOT NULL, created DOUBLE PRECISION NOT NULL)"
         if using_postgres() else
@@ -87,6 +88,9 @@ def _schema():
         if using_postgres() else
         "CREATE TABLE IF NOT EXISTS history (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, data TEXT NOT NULL, created REAL NOT NULL)",
         "CREATE INDEX IF NOT EXISTS history_user ON history (user_id, created)",
+        "CREATE TABLE IF NOT EXISTS progress (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, created " + _REAL + " NOT NULL, role TEXT NOT NULL, overall " + _REAL + ", scores TEXT NOT NULL)",
+        "CREATE INDEX IF NOT EXISTS progress_user ON progress (user_id, created)",
+        "CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created " + _REAL + " NOT NULL, source TEXT NOT NULL)",
     ]
 
 
@@ -195,6 +199,7 @@ def logout(token: str | None):
 def delete_account(user_id: str):
     with Conn() as c:
         c.run("DELETE FROM history WHERE user_id=?", (user_id,))
+        c.run("DELETE FROM progress WHERE user_id=?", (user_id,))
         c.run("DELETE FROM auth_sessions WHERE user_id=?", (user_id,))
         c.run("DELETE FROM users WHERE id=?", (user_id,))
 
@@ -236,3 +241,37 @@ def delete_item(user_id: str, iid: str) -> bool:
         had = bool(c.run("SELECT id FROM history WHERE id=? AND user_id=?", (iid, user_id)))
         c.run("DELETE FROM history WHERE id=? AND user_id=?", (iid, user_id))
     return had
+
+
+# ---------- progress over time (scores only, never answers or resumes) ----------
+def record_progress(user_id: str, sid: str, role: str, overall, scores: dict) -> None:
+    clean = {k: round(float(v), 2) for k, v in (scores or {}).items() if isinstance(v, (int, float))}
+    try:
+        ov = float(overall)
+    except (TypeError, ValueError):
+        ov = None
+    with Conn() as c:
+        c.run(
+            "INSERT INTO progress (id, user_id, created, role, overall, scores) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING",
+            (sid, user_id, time.time(), " ".join((role or "").split())[:80] or "Interview", ov, json.dumps(clean)),
+        )
+        extra = c.run("SELECT id FROM progress WHERE user_id=? ORDER BY created DESC", (user_id,))[MAX_HISTORY_PER_USER:]
+        for r in extra:
+            c.run("DELETE FROM progress WHERE id=?", (r["id"],))
+
+
+def list_progress(user_id: str) -> list[dict]:
+    with Conn() as c:
+        rows = c.run("SELECT created, role, overall, scores FROM progress WHERE user_id=? ORDER BY created ASC LIMIT ?", (user_id, MAX_HISTORY_PER_USER))
+    return [{"created": r["created"], "role": r["role"], "overall": r["overall"], "scores": json.loads(r["scores"])} for r in rows]
+
+
+# ---------- waitlist ----------
+def join_waitlist(email: str, source: str = "site") -> bool:
+    """Store an email once. Returns True when it is new. Only used to announce the paid plan."""
+    e = _clean_email(email)
+    with Conn() as c:
+        had = bool(c.run("SELECT email FROM waitlist WHERE email=?", (e,)))
+        if not had:
+            c.run("INSERT INTO waitlist (email, created, source) VALUES (?, ?, ?) ON CONFLICT (email) DO NOTHING", (e, time.time(), source[:20]))
+    return not had

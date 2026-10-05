@@ -24,6 +24,7 @@ MAX_UPLOAD = 5 * 1024 * 1024
 LIMITED = [Depends(rate_limit)]
 _signup_limiter = RateLimiter(limit=int(os.environ.get("SIGNUPS_PER_DAY", "10")), window=86400.0)
 _fail_limiter = FailLimiter(limit=5, window=1800.0)
+_waitlist_limiter = RateLimiter(limit=int(os.environ.get("WAITLIST_PER_DAY", "10")), window=86400.0)
 _auth_limiter = RateLimiter(limit=int(os.environ.get("AUTH_RATE_PER_MIN", "10")), window=60.0)
 COOKIE = "ip_session"
 PUBLIC_BASE = os.environ.get("PUBLIC_BASE_URL", "https://interviewpilot-bdzx.onrender.com")
@@ -226,9 +227,23 @@ def answer(sid: str, body: AnswerIn):
     return _guard(services.answer, sid, body.answer)
 
 
+@app.post("/api/session/{sid}/retry", dependencies=LIMITED)
+def retry_answer(sid: str, body: AnswerIn):
+    if not body.answer.strip():
+        raise HTTPException(400, "Answer is empty.")
+    return _guard(services.retry, sid, body.answer)
+
+
 @app.get("/api/session/{sid}/report", dependencies=LIMITED)
-def report(sid: str):
-    return _guard(services.report, sid)
+def report(sid: str, request: Request):
+    rep = _guard(services.report, sid)
+    u = current_user(request)
+    if u:  # logged-in users get a progress point (scores only, never answers)
+        try:
+            accounts.record_progress(u["id"], sid, services.load_interview(sid).get("role", ""), rep.get("overall_score"), services.skill_scores(sid))
+        except Exception:
+            pass  # progress is a bonus; never fail the report
+    return rep
 
 
 @app.post("/api/negotiation", dependencies=LIMITED)
@@ -481,6 +496,26 @@ def auth_delete(request: Request, u=Depends(need_user)):
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(COOKIE, path="/")
     return resp
+
+
+@app.get("/api/progress", dependencies=LIMITED)
+def progress(u=Depends(need_user)):
+    return {"points": accounts.list_progress(u["id"])}
+
+
+class WaitIn(BaseModel):
+    email: str = Field(max_length=254)
+
+
+@app.post("/api/waitlist", dependencies=LIMITED)
+def waitlist(body: WaitIn, request: Request):
+    if not _waitlist_limiter.check(client_key(request)):
+        raise HTTPException(429, "Too many requests from this network today. Please try again later.")
+    try:
+        new = accounts.join_waitlist(body.email)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True, "new": new}
 
 
 @app.get("/api/history", dependencies=LIMITED)
