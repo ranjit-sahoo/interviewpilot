@@ -106,6 +106,8 @@ Planned rename: the product is planned to be renamed MockRep after the hackathon
 
 When paid plans launch: add trial reminders (notify before any trial converts to billing) and a clear auto-renewal disclosure (price, renewal date, how to cancel) before payment, and update the Privacy Policy. Documentation only for now.
 
+Domain day checklist (when the custom domain lands): (a) decide main domain vs subdomain separation, for example the marketing site on the main domain and the app on app.<domain>; (b) keep transactional email (receipts, password and account mail) separate from marketing email, on different sending subdomains, so marketing complaints never hurt delivery of account mail; (c) verify the domain in Google Search Console and submit /sitemap.xml. robots.txt and sitemap.xml are already served (public pages only; /api/ and share cards are disallowed), and PUBLIC_BASE_URL must be set to the new domain.
+
 Pricing rule (documentation only):
 - Rs 499 per year for visitors with an India IP address. $49 per year for every other country (US, UK, UAE, Canada and anywhere else).
 - The pricing country is never chosen by the user. IP geolocation alone sets the price shown.
