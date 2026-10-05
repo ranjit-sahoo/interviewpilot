@@ -36,9 +36,9 @@ a{color:#8fb0ff}.skip{position:absolute;left:12px;top:-60px;background:#fff;colo
 input[type=checkbox]{accent-color:var(--acc)}
 .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:13px;color:var(--mute);margin:0 6px 4px 0}
 .chips button{background:var(--card2);color:var(--ink);border:1px solid var(--line);margin:4px 8px 0 0;padding:8px 20px;box-shadow:none}
-.chips button.on{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border-color:transparent}
+.chips button:disabled{cursor:not-allowed}.chips.locked button{cursor:default}.chips.locked button:disabled{cursor:not-allowed}.chips button.on{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border-color:transparent}
 .tabs{display:flex;gap:6px;margin:18px 0 0;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;position:sticky;top:8px;z-index:5;scrollbar-width:none;background-color:#10172b}
-.tabs::-webkit-scrollbar{display:none}
+.tabs::-webkit-scrollbar{display:none}.tabs.more{-webkit-mask-image:linear-gradient(90deg,#000 90%,transparent);mask-image:linear-gradient(90deg,#000 90%,transparent)}
 .tabs button{background:transparent;color:var(--mute);margin:0;padding:9px 16px;white-space:nowrap;box-shadow:none;flex:1}
 .tabs button.on{background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.35)}
 .w{border-left:3px solid var(--bad);padding:10px 14px;margin:12px 0;background:var(--card2);border-radius:0 12px 12px 0}
@@ -111,7 +111,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
   <button id="guideSkip" class="ghost" style="margin-top:8px">Skip - take me to all tools</button><div class="note">Mock interview, question bank, coding practice and more work without a resume. Just enter a role.</div></div>
 
 <div class="card" id="profile">
-  <label for="role">Target role</label><input type="text" id="role" maxlength="200" placeholder="e.g. QA Automation Engineer, Business Analyst, Java Developer">
+  <label for="role">Target role</label><input type="text" id="role" maxlength="200" placeholder="e.g. QA Engineer, Business Analyst">
   <label for="resume">Resume (paste text) or upload PDF, DOCX or TXT</label>
   <textarea id="resume" placeholder="Paste your resume here..."></textarea>
   <input type="file" id="file" accept=".pdf,.docx,.txt" aria-label="Upload resume">
