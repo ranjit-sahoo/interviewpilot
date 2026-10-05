@@ -12,7 +12,7 @@ import threading
 import time
 
 from app import accounts
-from app.guard import client_key
+from app.guard import RateLimiter, client_key, rate_limit
 
 _BOT = re.compile(r"bot|crawl|spider|slurp|uptime|monitor|curl|wget|python-requests|httpx|go-http|node-fetch|headless|preview|facebookexternalhit|render", re.I)
 # POST endpoint -> counter name. Only successful calls are counted.
@@ -49,6 +49,11 @@ LABELS = {
 }
 _salt = hashlib.sha256((accounts.DATABASE_URL or "local").encode()).hexdigest()
 _ready = False
+_pruned_day = ""
+_view_limiter = RateLimiter(limit=30, window=60.0)  # count at most 30 page views per client per minute
+_cache: dict = {"t": 0.0, "v": None}
+_cache_lock = threading.Lock()
+KEEP_DAYS = 35
 _ready_lock = threading.Lock()
 
 
@@ -83,14 +88,39 @@ def record(metric: str, ip: str, ua: str) -> None:
         if _BOT.search(ua or ""):
             return
         day = _day()
+        if metric == "pageview" and not _view_limiter.check(ip):
+            return
         vh = hashlib.sha256(f"{_salt}|{day}|{ip}|{ua}".encode()).hexdigest()[:20]
         with accounts.Conn() as c:
             _ensure(c)
+            _prune(c, day)
             c.run("INSERT INTO visit_counts (day, metric, n) VALUES (?, ?, 1) ON CONFLICT (day, metric) DO UPDATE SET n = visit_counts.n + 1", (day, metric))
             if metric == "pageview":
                 c.run("INSERT INTO visit_uniques (day, vhash) VALUES (?, ?) ON CONFLICT (day, vhash) DO NOTHING", (day, vh))
     except Exception:
         pass
+
+
+def _prune(c, day: str) -> None:
+    """Once per day, drop rows older than KEEP_DAYS so the tables stay small."""
+    global _pruned_day
+    if _pruned_day == day:
+        return
+    _pruned_day = day
+    old = _day(time.time() - KEEP_DAYS * 86400)
+    c.run("DELETE FROM visit_counts WHERE day < ?", (old,))
+    c.run("DELETE FROM visit_uniques WHERE day < ?", (old,))
+
+
+def cached_summary(ttl: float = 60.0) -> dict:
+    """summary() with a short cache so repeated hits do not hit the database each time."""
+    with _cache_lock:
+        if _cache["v"] is not None and time.monotonic() - _cache["t"] < ttl:
+            return _cache["v"]
+    v = summary()
+    with _cache_lock:
+        _cache["v"], _cache["t"] = v, time.monotonic()
+    return v
 
 
 def summary(days: int = 30) -> dict:
@@ -137,7 +167,7 @@ def render_html(s: dict) -> str:
         f"<div class='g'>{cards}<div class='c'><b>{int(s['visitor_days'])}</b><span>Unique visitor-days</span></div></div>"
         f"<div class='w'><table><thead><tr><th>Day</th><th>Visitors</th>{head}</tr></thead><tbody>{rows}</tbody></table></div>"
         "<p>First-party counts only: no cookies, no third-party scripts, no IP addresses stored. A visitor is counted once per day "
-        "using a one-way hash that cannot be reversed or linked across days. Bots and uptime checks are skipped.</p></body></html>"
+        "using a one-way hash that cannot be reversed or linked across days. Bots and uptime checks are skipped. <a href='/privacy'>Privacy Policy</a></p></body></html>"
     )
 
 
@@ -156,10 +186,12 @@ def install(app) -> None:
             asyncio.get_running_loop().run_in_executor(None, record, metric, client_key(request), request.headers.get("user-agent", ""))
         return resp
 
-    @app.get("/api/stats")
-    def api_stats():
-        return summary()
+    from fastapi import Depends
 
-    @app.get("/stats", response_class=HTMLResponse)
+    @app.get("/api/stats", dependencies=[Depends(rate_limit)])
+    def api_stats():
+        return cached_summary()
+
+    @app.get("/stats", response_class=HTMLResponse, dependencies=[Depends(rate_limit)])
     def stats_page():
-        return HTMLResponse(render_html(summary()))
+        return HTMLResponse(render_html(cached_summary()))
