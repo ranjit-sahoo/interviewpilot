@@ -42,6 +42,7 @@ def test_pageviews_unique_and_stats_page():
     s = analytics.summary()
     assert s["totals"]["pageview"] == 3
     assert s["visitor_days"] == 1  # same IP + browser counts once per day
+    analytics._cache["v"] = None
     page = c.get("/stats")
     assert page.status_code == 200 and "Page views" in page.text
     j = c.get("/api/stats").json()
@@ -59,3 +60,20 @@ def test_bots_and_uptime_are_skipped():
 
 def test_record_never_raises():
     analytics.record("pageview", "1.2.3.4", None)
+
+
+def test_stats_cached_and_pageview_rate_limited():
+    analytics._cache["v"] = None
+    a = analytics.cached_summary()
+    assert analytics.cached_summary() is a  # second call served from cache
+    lim = analytics.RateLimiter(limit=2, window=60.0)
+    assert lim.check("x") and lim.check("x") and not lim.check("x")
+
+
+def test_old_rows_pruned():
+    with accounts.Conn() as cn:
+        analytics._ensure(cn)
+        cn.run("INSERT INTO visit_counts (day, metric, n) VALUES (?, ?, 1) ON CONFLICT (day, metric) DO NOTHING", ("2000-01-01", "pageview"))
+        analytics._pruned_day = ""
+        analytics._prune(cn, analytics._day())
+        assert not cn.run("SELECT 1 FROM visit_counts WHERE day=?", ("2000-01-01",))
