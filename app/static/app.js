@@ -19,14 +19,24 @@ function resumeText(){const v=$('resume').value.trim();if(v.length<30)throw new 
 function profErr(m){$('profErr').textContent=m||''}
 
 // ---- tabs
-document.querySelectorAll('#tabs button').forEach(b=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.setAttribute('aria-controls','t-'+b.dataset.t)});
-$('tabs').onkeydown=e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const bs=[...document.querySelectorAll('#tabs button:not(.hide)')],i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const n=bs[(i+(e.key==='ArrowRight'?1:bs.length-1))%bs.length];n.focus();n.click()};
+document.querySelectorAll('#tabs button[data-t]').forEach(b=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.setAttribute('aria-controls','t-'+b.dataset.t)});
+$('tabs').onkeydown=e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const bs=[...document.querySelectorAll('#tabs button:not(.hide)')].filter(x=>x.offsetParent!==null),i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const n=bs[(i+(e.key==='ArrowRight'?1:bs.length-1))%bs.length];n.focus();n.click()};
 const tabsEl=$('tabs');const tabFade=()=>tabsEl.classList.toggle('more',tabsEl.scrollLeft+tabsEl.clientWidth<tabsEl.scrollWidth-4);tabsEl.addEventListener('scroll',tabFade,{passive:true});addEventListener('resize',tabFade);tabFade();
 // cheap intent preload: fetch the coding problem list when the user points at or focuses that tab
 const cpTab=document.querySelector('#tabs [data-t=code]');if(cpTab){const pre=()=>{if(typeof cpLoad==='function')cpLoad()};cpTab.addEventListener('pointerenter',pre,{once:true});cpTab.addEventListener('focus',pre,{once:true})}
+const moreTools=on=>{tabsEl.classList.toggle('showmore',on);$('moreBtn').setAttribute('aria-expanded',on?'true':'false');$('moreBtn').textContent=on?'Fewer tools':'More tools'};
+$('moreBtn').onclick=()=>moreTools(!tabsEl.classList.contains('showmore'));
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
-  document.querySelectorAll('#tabs button').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
+  if(e.target.classList.contains('mt'))moreTools(true);
+  document.querySelectorAll('#tabs button[data-t]').forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false')});
   ['prep','review','match','interview','star','brief','nego','bank','code','builder','recruiter','history'].forEach(x=>$('t-'+x).classList.toggle('hide',x!==t));if(t==='code')cpLoad();if(t==='history'&&typeof histLoad==='function')histLoad();profErr('')};
+
+if(innerWidth>=820)$('sampleDet').open=true;
+// ---- sample resume (fictional person, for trying the app)
+const SAMPLE={role:'QA Automation Engineer',resume:"Priya Nair\nQA Automation Engineer | Austin, TX | priya.nair@example.com\n\nSUMMARY\nQA engineer with 4 years of experience testing web and API applications for fintech and healthcare clients.\n\nEXPERIENCE\nQA Engineer, BrightPath Systems (2022 - Present)\n- Worked on testing of web applications and REST APIs\n- Wrote Selenium tests in Java and ran them in Jenkins\n- Logged bugs in Jira and attended sprint meetings\n- Helped the team with regression testing before releases\n\nJunior QA Analyst, Northwind Tech (2020 - 2022)\n- Executed manual test cases for a payments portal\n- Used Postman to check API responses\n- Prepared test reports for the client\n\nSKILLS\nSelenium, Java, TestNG, Postman, Jira, Jenkins, SQL, Git, Agile, Manual Testing, API Testing, Cucumber, Python, Docker, AWS, Cypress, JMeter\n\nEDUCATION\nB.Tech Computer Science, 2020",jd:"QA Automation Engineer (Remote, US). Build and maintain automated UI and API test suites with Selenium or Cypress, integrate tests into CI/CD pipelines, work with developers in Agile teams, and own regression quality for each release. 3+ years of experience, strong SQL and API testing."};
+function fillSample(){$('role').value=SAMPLE.role;$('resume').value=SAMPLE.resume;$('jd').value=SAMPLE.jd;profErr('');$('role').dispatchEvent(new Event('input',{bubbles:true}));$('resume').dispatchEvent(new Event('input',{bubbles:true}));$('jd').dispatchEvent(new Event('input',{bubbles:true}))}
+$('sampleFill').onclick=()=>{fillSample();$('profile').scrollIntoView({behavior:'smooth',block:'start'})};
+$('sampleTry').onclick=()=>{fillSample();endGuide();document.querySelector('[data-t=prep]').click();$('profile').scrollIntoView({behavior:'smooth',block:'start'})};
 
 // ---- question bank
 let bankAll=[],bankFilter='all';
@@ -152,7 +162,8 @@ function showPrep(d,c,jdUsed,saved){
   if(d.coding_profile)h+='<div id="prepCode"><h3>Coding questions for your profile</h3>'+(c?codeHtml(c):'<p class="note">Preparing coding questions...</p>')+'</div>';
   h+='<p><button class="ghost" data-pdf="prep">Download prep pack as PDF</button></p>';
   if(!saved)h+='<p><button class="ghost" id="saveBtn" data-save="prep">Save this pack to my history</button></p>';
-  $('prepOut').innerHTML=h;wireCode();
+  h+='<div class="nextcta"><b>Next step: practice these out loud.</b><p class="note" style="margin:4px 0 0">A mock interview scores each answer and gives you a report.</p><button id="ctaIv">Start a mock interview</button></div>';
+  $('prepOut').innerHTML=h;wireCode();$('ctaIv').onclick=()=>{document.querySelector('[data-t=interview]').click();$('t-interview').scrollIntoView({behavior:'smooth',block:'start'})};
 }
 const codeHtml=c=>c.coding_questions.length?c.coding_questions.map(cCard).join('')+'<p><button class="ghost" id="prepToCode">Practice coding with AI review</button></p>':'<p class="note">Could not prepare coding questions right now. Try the Coding Practice tab.</p>';
 const wireCode=()=>{const b=$('prepToCode');if(b)b.onclick=()=>document.querySelector('[data-t=code]').click()};
@@ -298,18 +309,27 @@ function speak(text,onend,force){if(!(voice||force)||!TTS){onend&&onend();return
 function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||'en-US';rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
   rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('ans').value=(baseText?baseText+' ':'')+t.trim()};
   rec.onerror=e=>{listening=false;$('btnMic').textContent='Start speaking';$('micState').textContent=e.error==='not-allowed'?'Microphone blocked. Allow it in the browser address bar, or switch to Type.':e.error==='no-speech'?'No speech heard. Try again.':'Mic problem ('+e.error+'). You can type instead.'};
-  rec.onend=()=>{listening=false;$('btnMic').textContent='Start speaking';if(!$('micState').textContent.startsWith('Mic')&&!$('micState').textContent.includes('blocked'))$('micState').innerHTML='Review or edit your answer, then submit.'};
-  try{rec.start();listening=true;$('btnMic').textContent='Stop';$('micState').innerHTML='<span class="live">Listening...</span> speak your answer';}catch(e){$('micState').textContent='Could not start the microphone.'}}
+  rec.onend=()=>{if(speakStart){speakMs+=Date.now()-speakStart;speakStart=0}recPause();listening=false;$('btnMic').textContent='Start speaking';if(!$('micState').textContent.startsWith('Mic')&&!$('micState').textContent.includes('blocked'))$('micState').innerHTML='Review or edit your answer, then submit.'};
+  try{rec.start();listening=true;speakStart=Date.now();if(voice)recStart();$('btnMic').textContent='Stop';$('micState').innerHTML='<span class="live">Listening...</span> speak your answer';}catch(e){$('micState').textContent='Could not start the microphone.'}}
 function stopMic(){if(rec&&listening){try{rec.stop()}catch(e){}}listening=false}
 $('btnMic').onclick=()=>listening?stopMic():startMic();
 $('btnSpeak').onclick=()=>speak($('qtext').textContent);
 
 // ---- interview
 $('btnStart').onclick=()=>busy($('btnStart'),'Preparing questions...',async()=>{profErr('');
-  try{const d=await post('/api/session',{resume:$('resume').value.trim(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked});
-    sid=d.session_id;fuOn=$('ivFu').checked;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
+  try{const d=await post('/api/session',{resume:$('resume').value.trim(),role:role(),jd:$('jd').value,country:await ensureCountry(),level:$('ivLevel').value,followups:$('ivFu').checked,count:+$('ivMode').value});
+    sid=d.session_id;ansLog=[];stopTimer();endRec(true);fuOn=$('ivFu').checked;$('fb').innerHTML='';$('report').classList.add('hide');$('interview').classList.remove('hide');showQ(d.question,d.number,d.total)
   }catch(e){profErr(e.message)}});
-function showQ(q,n,t,fu){curFu=!!fu;retryMode=false;$('btnAns').textContent='Submit answer';if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
+let ansLog=[],speakMs=0,speakStart=0,mrec=null,mchunks=[],mstream=null,tmr=null;
+function stopTimer(){if(tmr){clearInterval(tmr);tmr=null}$('ivTimer').classList.add('hide')}
+function startTimer(){stopTimer();if($('ivMode').value!=='8')return;let left=150;const el=$('ivTimer');el.classList.remove('hide');
+  const draw=()=>{const m=Math.floor(Math.max(left,0)/60),sec=Math.max(left,0)%60;el.textContent=left>0?`Time ${m}:${String(sec).padStart(2,'0')}`:'Time is up - wrap up your answer';el.classList.toggle('low',left<=30)};draw();tmr=setInterval(()=>{left--;draw();if(left<-3600)stopTimer()},1000)}
+function endRec(discard){const r=mrec;mrec=null;const st=mstream;mstream=null;speakMs=0;speakStart=0;
+  if(!r){mchunks=[];if(st)st.getTracks().forEach(t=>t.stop());return Promise.resolve(null)}
+  return new Promise(res=>{r.onstop=()=>{if(st)st.getTracks().forEach(t=>t.stop());const url=(!discard&&mchunks.length)?URL.createObjectURL(new Blob(mchunks,{type:r.mimeType||'audio/webm'})):null;mchunks=[];res(url)};try{r.state!=='inactive'?r.stop():r.onstop()}catch(e){r.onstop()}})}
+async function recStart(){if(!window.MediaRecorder||!navigator.mediaDevices)return;try{if(!mrec){mstream=await navigator.mediaDevices.getUserMedia({audio:true});mchunks=[];mrec=new MediaRecorder(mstream);mrec.ondataavailable=e=>{if(e.data&&e.data.size)mchunks.push(e.data)};mrec.start()}else if(mrec.state==='paused')mrec.resume()}catch(e){mrec=null}}
+function recPause(){try{if(mrec&&mrec.state==='recording')mrec.pause()}catch(e){}}
+function showQ(q,n,t,fu){curFu=!!fu;endRec(true);if(!fu||true)startTimer();retryMode=false;$('btnAns').textContent='Submit answer';if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
   $('interview').scrollIntoView({behavior:'smooth',block:'start'});speak(q.question,()=>{if(voice&&!listening)startMic()})}
 let curFu=false,wasFu=false,lastText='',retryMode=false,retryInfo={left:3};
 function fbHtml(d,f){const s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
@@ -327,13 +347,17 @@ function cmpHtml(r){const d=(r.new_avg-r.previous_avg),fs=r.first_scores||{};con
   return `<div class="cmp"><b>Attempt ${r.attempt}</b><span>Average ${a0.toFixed(1)} → <b>${r.new_avg.toFixed(1)}</b> out of 5</span><span class="${tot>0.04?'up':tot<-0.04?'down':''}">${tot>0.04?'▲ +'+tot.toFixed(1)+' better than your first answer':tot<-0.04?'▼ '+tot.toFixed(1)+' lower than your first answer (your best score is kept)':'same as your first answer'}</span></div>`}
 $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textContent='';
   const text=$('ans').value.trim();if(!text){$('ansErr').textContent='Give an answer first.';return}
+  if(speakStart){speakMs+=Date.now()-speakStart;speakStart=0}stopTimer();
+  const wasVoice=voice,sMs=speakMs,audioUrl=voice?await endRec(false):(endRec(true),null);
+  const paceOf=wc=>(wasVoice&&sMs>=5000&&wc>=8)?Math.round(wc/(sMs/60000)):null;
   $('btnAns').disabled=true;$('busy').classList.remove('hide');
   if(retryMode){try{const r=await post(`/api/session/${sid}/retry`,{answer:text});retryMode=false;lastText=text;retryInfo.left=r.retries_left;
+      {const lg=ansLog[ansLog.length-1];if(lg&&!lg.fu){const mm=((r.feedback.communication||{}).metrics)||{};lg.text=text;lg.scores=r.feedback.scores||{};lg.fillers=mm.fillers||{};lg.ft=mm.filler_total||0;lg.wc=mm.word_count||0;if(wasVoice){lg.wpm=paceOf(lg.wc);if(audioUrl)lg.url=audioUrl}}}
       $('fbBody').innerHTML=cmpHtml(r)+fbHtml({},r.feedback);$('btnAns').textContent='Submit answer';$('btnAns').disabled=true;drawRetry();$('fbBody').scrollIntoView({behavior:'smooth',block:'start'})}
     catch(e){$('ansErr').textContent=e.message;$('btnAns').disabled=false}finally{$('busy').classList.add('hide')}return}
   try{const d=await post(`/api/session/${sid}/answer`,{answer:text});const f=d.feedback,s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};
     const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
-    wasFu=curFu;lastText=text;retryInfo={left:3};
+    wasFu=curFu;lastText=text;retryInfo={left:3};ansLog.push({q:$('qtext').textContent,fu:curFu,text,scores:s,fillers:m.fillers||{},ft:m.filler_total||0,wc:m.word_count||0,wpm:paceOf(m.word_count||0),url:audioUrl});
     $('fb').innerHTML=`<div id="fbBody">${fbHtml(d,f)}</div><div id="retryArea"></div><div id="nextArea"></div>`;
     drawRetry();
     $('busy').classList.add('hide');
@@ -346,12 +370,27 @@ $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textCont
       $('btnNext').onclick=()=>{if(TTS)TTS.cancel();go()};
       if(voice)speak('Feedback. '+(f.feedback||'')+' Next question.',go)}
   }catch(e){$('ansErr').textContent=e.message;$('btnAns').disabled=false;$('busy').classList.add('hide')}};
+const mainQ=()=>ansLog.filter(a=>!a.fu);
+function ringSvg(v,max,sz){const p=Math.max(0,Math.min(1,(+v||0)/max)),R=sz/2-8,C=2*Math.PI*R;return `<svg class="ring" width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}" role="img" aria-label="Overall score ${esc(v)} out of ${max}"><circle cx="${sz/2}" cy="${sz/2}" r="${R}" fill="none" stroke="#2a3350" stroke-width="10"/><circle cx="${sz/2}" cy="${sz/2}" r="${R}" fill="none" stroke="#76b900" stroke-width="10" stroke-linecap="round" stroke-dasharray="${(C*p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${sz/2} ${sz/2})"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="${sz/3.2}" font-weight="800" fill="currentColor">${esc(v)}</text></svg>`}
+function barChart(vals,labels,opt){const W=Math.max(300,vals.length*64+60),H=170,pt=14,pb=26,pl=34,mx=Math.max(opt.min||1,...vals.filter(x=>x!=null)),y=v=>pt+(H-pt-pb)*(1-v/mx);
+  let g=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" role="img" aria-label="${esc(opt.label)}">`;
+  if(opt.band)g+=`<rect x="${pl}" y="${y(opt.band[1]).toFixed(1)}" width="${W-pl-6}" height="${(y(opt.band[0])-y(opt.band[1])).toFixed(1)}" fill="#76b900" opacity=".18"/><text x="${W-8}" y="${(y(opt.band[1])-3).toFixed(1)}" text-anchor="end" font-size="10" fill="#9aa6c0">good pace ${opt.band[0]}-${opt.band[1]}</text>`;
+  g+=`<line x1="${pl}" y1="${H-pb}" x2="${W-6}" y2="${H-pb}" stroke="#4a5578"/><text x="${pl-6}" y="${pt+4}" text-anchor="end" font-size="10" fill="#9aa6c0">${mx}</text><text x="${pl-6}" y="${H-pb}" text-anchor="end" font-size="10" fill="#9aa6c0">0</text>`;
+  vals.forEach((v,i)=>{const x=pl+12+i*((W-pl-18)/vals.length),bw=Math.min(36,(W-pl-18)/vals.length-14);if(v==null){g+=`<text x="${x+bw/2}" y="${H-pb-6}" text-anchor="middle" font-size="10" fill="#9aa6c0">n/a</text>`}else{const ok=opt.band?(v>=opt.band[0]&&v<=opt.band[1]):v<=2;g+=`<rect x="${x}" y="${y(v).toFixed(1)}" width="${bw}" height="${(H-pb-y(v)).toFixed(1)}" rx="4" fill="${ok?'#76b900':'#ffb84d'}"/><text x="${x+bw/2}" y="${(y(v)-4).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">${v}</text>`}
+    g+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="#9aa6c0">${esc(labels[i])}</text>`});return g+'</svg>'}
+function answersHtml(){const a=mainQ();if(!a.length)return '';const lab=a.map((_,i)=>'Q'+(i+1));
+  let h='<h3>Your answers, replay and transcript</h3>'+a.map((x,i)=>`<div class="ansrow"><b>Q${i+1}. ${esc(x.q)}</b>${x.url?`<div><audio controls preload="none" src="${esc(x.url)}" aria-label="Playback of your answer ${i+1}"></audio></div>`:''}<p class="note" style="margin:6px 0 0">Transcript: ${esc(x.text)}</p><p class="note" style="margin:4px 0 0">${x.wpm?`Pace ${x.wpm} words per minute. `:''}${esc(x.wc)} words, ${esc(x.ft)} filler words. Scores: clarity ${esc((x.scores||{}).clarity)}, depth ${esc((x.scores||{}).depth)}, correctness ${esc((x.scores||{}).correctness)}.</p></div>`).join('');
+  h+='<h3>Filler words per answer</h3><div class="fillg">'+barChart(a.map(x=>x.ft||0),lab,{label:'Filler words per answer',min:3})+'</div><p class="note">Fewer is better. 2 or fewer is good.</p>';
+  if(a.some(x=>x.wpm))h+='<h3>Speaking pace (words per minute)</h3><div class="pace">'+barChart(a.map(x=>x.wpm||null),lab,{label:'Words per minute per answer',min:180,band:[120,160]})+'</div><p class="note">Pace is measured only when you answer by voice for at least 5 seconds. Most interviewers like 120 to 160 words per minute.</p>';
+  else h+='<p class="note">Answer by voice to also see your speaking pace and play back your answers. Audio stays on your device.</p>';
+  h+='<p class="note">Recordings are kept only on this device while this page is open. They are never uploaded.</p>';return h}
 async function loadReport(){$('ansErr').textContent='';const ra=$('retryArea');if(ra)ra.innerHTML='';
   try{const r=await api(`/api/session/${sid}/report`);lastReport=r;const el=$('report');el.classList.remove('hide');
-  el.innerHTML=`<h2>Session report <span class="score">${esc(r.overall_score)}/5</span></h2><p>${esc(r.summary)}</p>
+  el.innerHTML=`<h2>Session report ${ringSvg(r.overall_score,5,96)}</h2><p>${esc(r.summary)}</p>
    ${r.communication_summary?`<h3>Communication</h3><p>${esc(r.communication_summary)}</p>`:''}
    <h3>Strengths</h3>${ul(r.strengths)}<h3>Gaps</h3>${ul(r.gaps)}
    <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol><p><button class="ghost" data-pdf="report">Download report as PDF</button></p>${me?'<p class="note">Your scores (not your answers) were added to My History > Your progress.</p>':'<p class="note">Log in to track your scores over time.</p>'}`;
+  el.insertAdjacentHTML('beforeend',answersHtml()+'<div class="nextcta"><b>Retry to beat your score.</b><p class="note" style="margin:4px 0 0">Use the 7-day plan, then run another session.</p><button id="btnAgain">Practice again</button></div>');$('btnAgain').onclick=()=>{$('report').classList.add('hide');$('interview').classList.add('hide');$('ivSetup').scrollIntoView({behavior:'smooth',block:'start'})};
   el.insertAdjacentHTML('beforeend',`<h3>Share your result</h3><p class="note">Create a clean score card for LinkedIn or WhatsApp. It shows only your score, role and strengths, never your resume.</p>
    <input type="text" id="cardName" maxlength="40" placeholder="Your name on the card (optional)"><button id="btnCard" class="alt">Create share card</button><div id="cardOut"></div>`);
   $('btnCard').onclick=()=>busy($('btnCard'),'Designing your card...',async()=>{
@@ -447,7 +486,7 @@ function printDoc(html){$('prArea').innerHTML=html;document.body.classList.add('
 window.addEventListener('afterprint',()=>{document.body.classList.remove('pr');$('prArea').innerHTML=''});
 const today=()=>new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
 document.body.addEventListener('click',e=>{const k=e.target.dataset&&e.target.dataset.pdf;if(!k)return;
-  if(k==='report'&&lastReport){const r=lastReport;printDoc(`<h1>Interview practice report</h1><p>${esc($('role').value.trim())} - ${esc(today())} - Overall ${esc(r.overall_score)}/5</p><h2>Summary</h2><p>${esc(r.summary)}</p>${r.communication_summary?`<h2>Communication</h2><p>${esc(r.communication_summary)}</p>`:''}<h2>Strengths</h2>${ul(r.strengths)}<h2>Gaps</h2>${ul(r.gaps)}<h2>7-day practice plan</h2><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol><p style="margin-top:18px;color:#555">Made with MockRep. AI feedback is guidance, not a guarantee.</p>`)}
+  if(k==='report'&&lastReport){const r=lastReport;printDoc(`<div style="display:flex;align-items:center;gap:10px;border-bottom:3px solid #76b900;padding-bottom:8px;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact"><span style="width:34px;height:34px;border-radius:9px;background:#76b900;color:#0b1200;display:inline-grid;place-items:center;font-weight:900;-webkit-print-color-adjust:exact;print-color-adjust:exact">MR</span><b style="font-size:18px">MockRep</b><span style="margin-left:auto;color:#555">mockrep.onrender.com</span></div><h1>Interview practice report</h1><p>${esc($('role').value.trim())} - ${esc(today())} - Overall <b>${esc(r.overall_score)}/5</b></p><h2>Summary</h2><p>${esc(r.summary)}</p>${r.communication_summary?`<h2>Communication</h2><p>${esc(r.communication_summary)}</p>`:''}<h2>Strengths</h2>${ul(r.strengths)}<h2>Gaps</h2>${ul(r.gaps)}<h2>7-day practice plan</h2><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol>${mainQ().length?`<h2>Your answers</h2>${mainQ().map((x,i)=>`<div class="q"><p><b>Q${i+1}. ${esc(x.q)}</b></p><p>${esc(x.text)}</p><p><i>${x.wpm?`Pace ${x.wpm} words per minute. `:''}${esc(x.wc)} words, ${esc(x.ft)} filler words${Object.keys(x.fillers||{}).length?' ('+Object.entries(x.fillers).map(([k,v])=>esc(k)+' x'+esc(v)).join(', ')+')':''}.</i></p></div>`).join('')}`:''}<p style="margin-top:18px;color:#555">Made with MockRep. AI feedback is guidance, not a guarantee.</p>`)}
   if(k==='prep'&&lastPrep){const d=lastPrep.pack;printDoc(`<h1>Interview prep pack: ${esc(lastPrep.role)}</h1><p>${esc(today())} - tailored for the ${esc(d.country)} market</p>${d.focus&&d.focus.length?`<h2>Revise these first</h2>${ul(d.focus)}`:''}<h2>Likely questions with model answers</h2>${d.questions.map((q,i)=>`<div class="q"><p><b>${i+1}. ${esc(q.question)}</b> (${esc(q.type)})</p>${q.why_asked?`<p><i>Why they ask: ${esc(q.why_asked)}</i></p>`:''}<p>${esc(q.model_answer)}</p></div>`).join('')}${lastPrep.coding&&lastPrep.coding.coding_questions&&lastPrep.coding.coding_questions.length?`<h2>Coding questions</h2>${ul(lastPrep.coding.coding_questions.map(c=>(c.title||'')+': '+(c.problem||'')))}`:''}<p style="margin-top:18px;color:#555">Made with MockRep. Replace example details in model answers with your real experience.</p>`)}});
 
 // ---- first-time guided start
