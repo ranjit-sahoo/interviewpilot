@@ -21,6 +21,7 @@ function profErr(m){$('profErr').textContent=m||''}
 // ---- tabs
 document.querySelectorAll('#tabs button').forEach(b=>{b.setAttribute('role','tab');b.setAttribute('aria-selected',b.classList.contains('on')?'true':'false');b.setAttribute('aria-controls','t-'+b.dataset.t)});
 $('tabs').onkeydown=e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const bs=[...document.querySelectorAll('#tabs button:not(.hide)')],i=bs.indexOf(document.activeElement);if(i<0)return;e.preventDefault();const n=bs[(i+(e.key==='ArrowRight'?1:bs.length-1))%bs.length];n.focus();n.click()};
+const tabsEl=$('tabs');const tabFade=()=>tabsEl.classList.toggle('more',tabsEl.scrollLeft+tabsEl.clientWidth<tabsEl.scrollWidth-4);tabsEl.addEventListener('scroll',tabFade,{passive:true});addEventListener('resize',tabFade);tabFade();
 // cheap intent preload: fetch the coding problem list when the user points at or focuses that tab
 const cpTab=document.querySelector('#tabs [data-t=code]');if(cpTab){const pre=()=>{if(typeof cpLoad==='function')cpLoad()};cpTab.addEventListener('pointerenter',pre,{once:true});cpTab.addEventListener('focus',pre,{once:true})}
 $('tabs').onclick=e=>{const t=e.target.dataset&&e.target.dataset.t;if(!t)return;
@@ -42,7 +43,7 @@ async function bankGo(ai){
   $('bankErr').textContent='';
   try{
     const r=($('bankRole').value||$('role').value).trim(),co=$('bankCo').value.trim();
-    const d=await post('/api/bank',{role:r,company:co,country:country||'US',ai:!!ai});
+    const d=await post('/api/bank',{role:r,company:co,country:cc(),ai:!!ai});
     let html='';
     if(d.profile){const p=d.profile;html+=`<div class="cand"><b>${esc(p.name)}</b> <span class="pill">${esc(p.country)}</span><span class="pill">${esc(p.kind)}</span><p>Typical rounds: ${esc(p.rounds)}</p><p>Focus:</p>${ul(p.focus)}<p>Tip: ${esc(p.tip)}</p><div class="note">${esc(p.note)}</div>${d.company?'':'<button class="ghost" id="bankAi">Generate company-style questions (AI)</button>'}</div>`}
     if(d.company_error)html+=`<p class="note">${esc(d.company_error)}</p>`;
@@ -129,10 +130,10 @@ $('rbAddPrj').onclick=()=>{if(RB.projects.length<6){RB.projects.push({name:'',de
 $('rbForm').onclick=async e=>{const d=e.target.dataset||{};
   if(d.del){const m=/^(rx|ed|pj)(\d+)$/.exec(d.del);if(m){({rx:RB.experience,ed:RB.education,pj:RB.projects})[m[1]].splice(+m[2],1);rbFormRender()}}
   if(d.pol!==undefined){const i=+d.pol,ex=RB.experience[i];$('rbErr').textContent='';
-    await busy(e.target,'Improving...',async()=>{try{const r=await post('/api/builder/polish',{role:RB.title||$('role').value,bullets:ex.bullets,country:country||'US'});ex.bullets=r.bullets;rbFormRender()}catch(er){$('rbErr').textContent=er.message}})}};
+    await busy(e.target,'Improving...',async()=>{try{const r=await post('/api/builder/polish',{role:RB.title||$('role').value,bullets:ex.bullets,country:cc()});ex.bullets=r.bullets;rbFormRender()}catch(er){$('rbErr').textContent=er.message}})}};
 $('rbSum').onclick=()=>busy($('rbSum'),'Writing...',async()=>{$('rbErr').textContent='';
   const facts=RB.experience.map(e=>`${e.role} at ${e.company}: ${(e.bullets||[]).join('; ')}`).join('\n')+'\nSkills: '+RB.skills.join(', ');
-  try{const r=await post('/api/builder/summary',{role:RB.title||$('role').value,facts,country:country||'US'});RB.summary=r.summary;rbFormRender()}catch(e){$('rbErr').textContent=e.message}});
+  try{const r=await post('/api/builder/summary',{role:RB.title||$('role').value,facts,country:cc()});RB.summary=r.summary;rbFormRender()}catch(e){$('rbErr').textContent=e.message}});
 $('rbFill').onclick=()=>busy($('rbFill'),'Reading...',async()=>{$('rbErr').textContent='';
   try{if(RB.experience.length&&!confirm('Replace what you have in the builder with your pasted resume?'))return;
     RB=Object.assign(RB_EMPTY(),await post('/api/builder/parse',{resume:resumeText()}));rbFormRender()}catch(e){$('rbErr').textContent=e.message}});
@@ -159,9 +160,9 @@ $('btnPrep').onclick=()=>busy($('btnPrep'),'Building your pack (about 10 s)...',
   $('prepErr').textContent='';$('prepOut').innerHTML='';lastPrep=null;
   try{const r=resumeText(),ro=role(),jd=$('jd').value.trim();
     if(!countryTouched&&!country)await detect();
-    const d=await post('/api/prep',{resume:r,role:ro,jd,country:country||'US'});
+    const d=await post('/api/prep',{resume:r,role:ro,jd,country:cc()});
     lastPrep={role:ro,jd:!!jd,pack:d,coding:null};showPrep(d,null,!!jd);
-    if(d.coding_profile)post('/api/prep/coding',{resume:r,role:ro,jd,country:country||'US'}).then(c=>{lastPrep.coding=c;const el=$('prepCode');if(el){el.innerHTML='<h3>Coding questions for your profile</h3>'+codeHtml(c);wireCode()}})
+    if(d.coding_profile)post('/api/prep/coding',{resume:r,role:ro,jd,country:cc()}).then(c=>{lastPrep.coding=c;const el=$('prepCode');if(el){el.innerHTML='<h3>Coding questions for your profile</h3>'+codeHtml(c);wireCode()}})
       .catch(()=>{const el=$('prepCode');if(el)el.innerHTML='<h3>Coding questions</h3><p class="note">Could not load coding questions right now. Try the Coding Practice tab.</p>'});
   }catch(e){$('prepErr').textContent=e.message}});
 
@@ -209,11 +210,16 @@ $('histDel').onclick=async()=>{if(!confirm('Delete your account and everything s
 refreshMe();
 
 // ---- country
-function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}
-$('countries').onclick=e=>{if(e.target.dataset.c){setCountry(e.target.dataset.c,true);$('detNote').textContent='- you chose '+e.target.dataset.c}};
+const CK='ip_country';let countryLocked=false;
+function setCountry(c,touched){country=c;if(touched)countryTouched=true;document.querySelectorAll('#countries button').forEach(b=>{const on=b.dataset.c===c;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false')})}
+function lockCountry(c,why){countryLocked=true;$('countries').classList.add('locked');countryTouched=true;setCountry(c,true);document.querySelectorAll('#countries button').forEach(b=>{b.disabled=b.dataset.c!==c;b.setAttribute('aria-disabled',b.disabled?'true':'false')});
+  $('detNote').textContent=`- ${c} (${why}, locked for pricing and fairness)`}
+$('countries').onclick=e=>{const b=e.target.closest&&e.target.closest('button[data-c]');if(!b||countryLocked)return;
+  if(!confirm('Choose '+b.dataset.c+'? You cannot change this afterwards on this device.'))return;
+  try{localStorage.setItem(CK,b.dataset.c)}catch(_){}lockCountry(b.dataset.c,'you chose it')};
 async function detect(){
   const r=$('resume').value.trim(),j=$('jd').value.trim();const key=r.slice(0,200)+'|'+j.slice(0,100)+r.length;
-  if(r.length<30||countryTouched||key===detKey)return;detKey=key;
+  if(r.length<30||countryTouched||countryLocked||key===detKey)return;detKey=key;
   $('detNote').textContent='- detecting...';
   try{const d=await post('/api/detect-country',{resume:r,jd:j});if(!countryTouched){setCountry(d.country,false);
     $('detNote').textContent=`- detected ${d.country} (${d.confidence} confidence). Tap to change`}}
@@ -222,8 +228,15 @@ async function detect(){
 $('resume').addEventListener('blur',detect);$('jd').addEventListener('blur',detect);
 let detTimer=null;const detSoon=()=>{clearTimeout(detTimer);detTimer=setTimeout(()=>{if($('resume').value.trim().length>=80)detect()},1200)};
 $('resume').addEventListener('input',detSoon);$('jd').addEventListener('input',detSoon);
-fetch('/api/geo').then(r=>r.json()).then(g=>{if(g.country&&!country&&!countryTouched){setCountry(g.country,false);$('detNote').textContent=`- we guessed ${g.country} from your location. Paste your resume and we will confirm. Tap to change`}}).catch(()=>{});
-async function ensureCountry(){await detect();if(!country)setCountry('US',false);return country}
+// The server decides the country from the network address (CDN check). When that signal exists the choice is locked.
+// Only when there is no reliable signal can the visitor pick once; that pick is then locked on this device.
+fetch('/api/geo').then(r=>r.json()).catch(()=>null).then(g=>{
+  if(g&&g.locked&&g.country){lockCountry(g.country,'detected from your network');return}
+  let sv=null;try{sv=localStorage.getItem(CK)}catch(e){}
+  if(sv==='US'||sv==='India'||sv==='Other'){lockCountry(sv,'you chose it');return}
+  $('detNote').textContent='- we could not detect it, please choose once'});
+function cc(){if(!country){$('detNote').textContent='- please choose your country';const b=document.querySelector('#countries button');if(b)b.focus();throw new Error('Please choose your country (US, India or Other) at the top of the page first.')}return country}
+async function ensureCountry(){await detect();if(!country){$('detNote').textContent='- please choose your country';const b=document.querySelector('#countries button');if(b)b.focus();throw new Error('Please choose your country (US, India or Other) above first.')}return country}
 
 $('file').onchange=async()=>{const f=$('file').files[0];if(!f)return;profErr('');
   const fd=new FormData();fd.append('file',f);
@@ -361,10 +374,10 @@ const starHtml=d=>`<h3>Your STAR answer</h3>${d.opener?`<p class="note">Start wi
   <p><button class="ghost" data-save="star">Save to my history</button></p>`;
 function starBind(d){const b=$('stCopy');if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(d.spoken_answer);b.textContent='Copied'}catch(e){}}}
 $('btnStar').onclick=()=>busy($('btnStar'),'Building your answer...',async()=>{$('starErr').textContent='';
-  try{const d=await post('/api/star',{experience:$('stExp').value,question:$('stQ').value,role:$('role').value,country:country||'US'});
+  try{const d=await post('/api/star',{experience:$('stExp').value,question:$('stQ').value,role:$('role').value,country:cc()});
     lastStar=Object.assign({question:$('stQ').value},d);$('starOut').innerHTML=starHtml(d);starBind(d)}catch(e){$('starErr').textContent=e.message}});
 // ---- company brief
-const bfCountry=()=>{$('bfCountry').textContent=`Adapted to: ${country||'US'} (change the Country chips at the top of the page)`};
+const bfCountry=()=>{$('bfCountry').textContent=`Adapted to: ${country||'not chosen yet'} (change the Country chips at the top of the page)`};
 document.querySelector('[data-t=brief]').addEventListener('click',()=>{bfCountry();if(!$('bfRole').value)$('bfRole').value=$('role').value});
 fetch('/api/companies').then(r=>r.json()).then(j=>{$('bfList').innerHTML=j.companies.map(c=>`<option value="${esc(c)}">`).join('')}).catch(()=>{});
 const sec=(t,h)=>h?`<div class="cand"><b>${t}</b>${h}</div>`:'';
@@ -374,7 +387,7 @@ const briefHtml=d=>`<h2>${esc(d.company)} <span class="pill">${esc(d.country)} v
   ${d.why_join?`<div class="w g"><b>Your "why this company" angle</b><br>${esc(d.why_join)}</div>`:''}${sec('Smart questions to ask them',ul(d.ask_them))}${sec('Avoid these mistakes',ul(d.watch_out))}
   <p class="note">${esc(d.caution)} <a href="${esc(/^https:\/\//.test(d.news_url||"")?d.news_url:"#")}" target="_blank" rel="noopener">See the latest news</a></p><p><button class="ghost" data-save="brief">Save to my history</button></p>`;
 $('btnBrief').onclick=()=>busy($('btnBrief'),'Researching...',async()=>{$('briefErr').textContent='';
-  try{const d=await post('/api/company-brief',{company:$('bfCo').value,role:$('bfRole').value||$('role').value,country:country||'US'});lastBrief=d;$('briefOut').innerHTML=briefHtml(d)}catch(e){$('briefErr').textContent=e.message}});
+  try{const d=await post('/api/company-brief',{company:$('bfCo').value,role:$('bfRole').value||$('role').value,country:cc()});lastBrief=d;$('briefOut').innerHTML=briefHtml(d)}catch(e){$('briefErr').textContent=e.message}});
 
 // ---- negotiation
 function bubble(who,t){const d=document.createElement('div');d.className='bubble '+(who==='recruiter'?'r':'c');d.innerHTML=`<small class="note">${who==='recruiter'?'Recruiter':'You'}</small><br>${esc(t)}`;$('chat').appendChild(d);d.scrollIntoView({behavior:'smooth',block:'nearest'})}
