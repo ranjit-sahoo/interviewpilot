@@ -105,3 +105,15 @@ def test_ip_country_overrides_client_supplied_country(monkeypatch):
     c.post("/api/prep", json={**body, "country": "India"}, headers={"cf-ipcountry": "DE"})
     c.post("/api/prep", json={**body, "country": "India"})
     assert seen == ["India", "US", "Other", "India"]
+
+
+def test_about_page_and_sitemap():
+    r = c.get("/about")
+    assert r.status_code == 200 and "Ranjit Kumar Sahoo" in r.text and "since 2017" in r.text
+    assert "/about" in c.get("/sitemap.xml").text
+
+
+def test_session_count_bounds():
+    base = {"resume": "x", "role": "QA"}
+    assert c.post("/api/session", json={**base, "count": 2}).status_code == 422
+    assert c.post("/api/session", json={**base, "count": 9}).status_code == 422
