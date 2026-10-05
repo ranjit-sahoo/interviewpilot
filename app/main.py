@@ -98,6 +98,7 @@ class StartIn(BaseModel):
     country: str = "US"
     level: str = Field("auto", max_length=20)
     followups: bool = True
+    count: int = Field(5, ge=3, le=8)
 
 
 class AnswerIn(BaseModel):
@@ -297,7 +298,7 @@ def match(body: MatchIn, request: Request):
 
 @app.post("/api/session", dependencies=LIMITED)
 def start(body: StartIn, request: Request):
-    return services.start_session(_resume_or_blank(body.resume), _need_role(body.role), body.jd, _cc(request, body.country), body.level, body.followups)
+    return services.start_session(_resume_or_blank(body.resume), _need_role(body.role), body.jd, _cc(request, body.country), body.level, body.followups, body.count)
 
 
 @app.post("/api/session/{sid}/answer", dependencies=LIMITED)
@@ -646,7 +647,7 @@ def robots():
 @app.get("/sitemap.xml")
 def sitemap():
     base = PUBLIC_BASE.rstrip("/")
-    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/privacy", "/terms", "/cookies"))
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/about", "/privacy", "/terms", "/cookies"))
     xml = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n'
     return Response(xml, media_type="application/xml")
 
@@ -654,6 +655,11 @@ def sitemap():
 @app.get("/privacy")
 def privacy():
     return FileResponse(os.path.join(STATIC, "privacy.html"), media_type="text/html")
+
+
+@app.get("/about")
+def about():
+    return FileResponse(os.path.join(STATIC, "about.html"), media_type="text/html")
 
 
 @app.get("/terms")
