@@ -85,3 +85,23 @@ def test_signup_consent_flag():
     assert r.status_code == 400
     r = c.post("/api/auth/register", json={"email": "agree@example.com", "password": "longenough1", "agree": True})
     assert r.status_code == 200
+
+
+def test_geo_uses_cdn_country_header_only():
+    assert c.get("/api/geo", headers={"cf-ipcountry": "IN"}).json() == {"country": "India", "code": "IN", "locked": True}
+    assert c.get("/api/geo", headers={"cf-ipcountry": "US"}).json()["country"] == "US"
+    assert c.get("/api/geo", headers={"cf-ipcountry": "DE"}).json()["country"] == "Other"
+    assert c.get("/api/geo", headers={"cf-ipcountry": "XX"}).json()["country"] is None
+    assert c.get("/api/geo").json()["country"] is None
+
+
+def test_ip_country_overrides_client_supplied_country(monkeypatch):
+    import app.main as m
+    seen = []
+    monkeypatch.setattr(m.prep, "build", lambda resume, role, jd, country: seen.append(country) or {"ok": True})
+    body = {"resume": "x" * 60, "role": "QA", "jd": "", "country": "US"}
+    c.post("/api/prep", json=body, headers={"cf-ipcountry": "IN"})
+    c.post("/api/prep", json={**body, "country": "India"}, headers={"cf-ipcountry": "US"})
+    c.post("/api/prep", json={**body, "country": "India"}, headers={"cf-ipcountry": "DE"})
+    c.post("/api/prep", json={**body, "country": "India"})
+    assert seen == ["India", "US", "Other", "India"]
