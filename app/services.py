@@ -76,15 +76,16 @@ def _level(v) -> str:
     return v if v in LEVELS else "auto"
 
 
-def start_session(resume: str, role: str, jd: str = "", country: str = "US", level: str = "auto", followups: bool = True) -> dict:
+def start_session(resume: str, role: str, jd: str = "", country: str = "US", level: str = "auto", followups: bool = True, count: int = N_QUESTIONS) -> dict:
     country = market.normalize(country)
     level = _level(level)
+    count = max(3, min(int(count), 8))
     qs = llm.chat_json(
         "questions",
-        _sys(prompts.QUESTIONS_SYSTEM, country, n=N_QUESTIONS, level_note=LEVELS[level]),
+        _sys(prompts.QUESTIONS_SYSTEM, country, n=count, level_note=LEVELS[level]),
         _ctx(resume, role, jd),
         model=llm.FAST_MODEL,
-    ).get("questions", [])[:N_QUESTIONS]
+    ).get("questions", [])[:count]
     if not qs:
         raise llm.LLMError("no questions generated")
     data = {
