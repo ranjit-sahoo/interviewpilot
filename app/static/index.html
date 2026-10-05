@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>InterviewPilot - AI interview prep</title>
+<title>MockRep - AI interview prep</title>
 <meta name="description" content="AI interview prep for IT candidates and recruiters: resume review, JD match, voice mock interviews, salary negotiation practice and recruiter screening.">
 <meta name="theme-color" content="#0b1020"><link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="icon" href="/static/icons/icon-192.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="InterviewPilot"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="MockRep"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
 <style>
 :root{--bg:#0b1020;--card:rgba(255,255,255,.04);--card2:#0d1426;--ink:#eef2fb;--mute:#9aa6c0;--acc:#76b900;--acc2:#5b8cff;--bad:#ff6b7a;--warn:#ffb84d;--line:rgba(255,255,255,.09);--r:16px;--shadow:0 10px 40px rgba(0,0,0,.35)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
@@ -90,7 +90,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
  body.guided .feat{display:none}.cmp{flex-direction:column;align-items:flex-start}
 }
 </style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><div class="wrap">
-<header class="hero"><div class="brand"><span class="logo">IP</span>InterviewPilot</div>
+<header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
 <div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
@@ -232,12 +232,12 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
   <p><button id="histDel" class="ghost hide">Delete my account and all saved data</button></p></section>
 
 <section id="t-recruiter" class="card hide">
-  <p class="note">Paste or upload several candidate resumes. InterviewPilot screens each against the role and job description above and ranks them with suggested phone-screen questions. Up to 10 candidates.</p>
+  <p class="note">Paste or upload several candidate resumes. MockRep screens each against the role and job description above and ranks them with suggested phone-screen questions. Up to 10 candidates.</p>
   <div id="cands"></div><button id="btnAddCand" class="ghost">+ Add candidate</button>
   <button id="btnScreen" class="alt">Screen candidates</button><span id="scrBusy" class="pill hide">screening...</span>
   <div id="scrErr" class="err" role="alert"></div><div id="scrOut"></div>
 </section>
-<section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">InterviewPilot stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
+<section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">MockRep stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
   <div class="wl"><input type="email" id="wlEmail" maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
 <div id="prArea"></div>
 <div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <a href="/privacy">Privacy Policy</a></div>
