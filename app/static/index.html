@@ -6,53 +6,56 @@
 <link rel="icon" href="/static/icons/icon-192.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="MockRep"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
 <style>
-:root{--bg:#0b1020;--card:rgba(255,255,255,.04);--card2:#0d1426;--ink:#eef2fb;--mute:#9aa6c0;--acc:#76b900;--acc2:#5b8cff;--bad:#ff6b7a;--warn:#ffb84d;--line:rgba(255,255,255,.09);--r:16px;--shadow:0 10px 40px rgba(0,0,0,.35)}
+:root{--fs-xs:13px;--fs-sm:14px;--fs-md:16px;--fs-lg:18px;--fs-xl:24px;--fs-2xl:30px;--lh-tight:1.2;--lh-body:1.6;--bg:#0b1020;--card:rgba(255,255,255,.04);--card2:#0d1426;--ink:#eef2fb;--mute:#9aa6c0;--acc:#76b900;--acc2:#5b8cff;--bad:#ff6b7a;--warn:#ffb84d;--line:rgba(255,255,255,.09);--r:16px;--shadow:0 10px 40px rgba(0,0,0,.35)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;font:16px/1.6 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:var(--bg);
  background-image:radial-gradient(900px 500px at 85% -10%,rgba(91,140,255,.22),transparent),radial-gradient(700px 400px at -10% 10%,rgba(118,185,0,.16),transparent);background-attachment:fixed;-webkit-font-smoothing:antialiased}
 .wrap{max-width:980px;margin:0 auto;padding:28px 16px 90px}
 .hero{padding:28px 0 8px}.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.3px}
 .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#9be000,#76b900);display:grid;place-items:center;color:#0b1200;font-size:15px;font-weight:900}
-h1{font-size:clamp(30px,5.5vw,48px);line-height:1.1;margin:18px 0 10px;letter-spacing:-1.2px;font-weight:800}
+h1{font-size:clamp(30px,5.5vw,48px);line-height:var(--lh-tight);margin:18px 0 10px;letter-spacing:-1.2px;font-weight:800}
 h1 em{font-style:normal;background:linear-gradient(90deg,#9be000,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.sub{color:var(--mute);max-width:640px;font-size:17px}
-.feat{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}.feat span{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 13px;font-size:13.5px;color:var(--ink)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:16px 0;box-shadow:var(--shadow);backdrop-filter:blur(8px);animation:rise .35s ease both}
-@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sub{color:var(--mute);max-width:640px;font-size:var(--fs-lg)}
+.feat{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}.feat span{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:5px 13px;font-size:var(--fs-xs);color:var(--ink)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin:16px 0;box-shadow:var(--shadow);animation:rise .2s ease-out both}
+@keyframes rise{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
-label{display:block;font-weight:600;margin:14px 0 6px;font-size:14.5px}
-input[type=text],input[type=email],input[type=password],textarea,select{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;transition:border-color .15s,box-shadow .15s}
-input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(91,140,255,.25)}
-textarea{min-height:120px;resize:vertical}
+label{display:block;font-weight:600;margin:14px 0 6px;font-size:var(--fs-sm)}
+input[type=text],input:not([type]),input[type=email],input[type=password],textarea,select{width:100%;background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;transition:border-color .15s,box-shadow .15s}
+input[type=text]:focus,input:not([type]):focus,input[type=email]:focus,input[type=password]:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc2);box-shadow:0 0 0 3px rgba(91,140,255,.25)}
+textarea{min-height:120px;resize:vertical}::placeholder{color:var(--mute);opacity:1}
 input[type=file]{margin-top:8px;color:var(--mute);font-size:14px}input[type=file]::file-selector-button{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;margin-right:10px;cursor:pointer}
 input[type=range]{width:100%;accent-color:var(--acc)}
-button{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border:0;border-radius:12px;padding:11px 20px;font:inherit;font-weight:700;cursor:pointer;margin:12px 8px 0 0;transition:transform .12s,box-shadow .15s,opacity .15s;box-shadow:0 6px 18px rgba(118,185,0,.25)}
+button{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border:0;border-radius:12px;padding:11px 20px;font:inherit;font-weight:700;cursor:pointer;margin:12px 8px 0 0;transition:transform .12s,opacity .15s;box-shadow:0 6px 18px rgba(118,185,0,.25)}
 button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 24px rgba(118,185,0,.32)}
-button.alt{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;box-shadow:0 6px 18px rgba(91,140,255,.28)}
+button.alt{background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff;box-shadow:0 6px 18px rgba(59,102,224,.3)}
 button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);box-shadow:none}
-button:disabled{opacity:.55;cursor:wait}button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+button:disabled{opacity:.55;cursor:wait}button:focus-visible,a:focus-visible,summary:focus-visible,input[type=checkbox]:focus-visible,input[type=file]:focus-visible,input[type=range]:focus-visible{outline:3px solid #fff;outline-offset:2px;box-shadow:0 0 0 5px #3b66e0}
+a{color:#8fb0ff}.skip{position:absolute;left:12px;top:-60px;background:#fff;color:#0b1020;padding:10px 16px;border-radius:10px;font-weight:700;z-index:100;text-decoration:none}.skip:focus{top:8px}
+#acct{display:flex;flex-wrap:wrap;align-items:center;gap:8px 4px}#acct button{margin:0 8px 0 0}#acctForm{flex-basis:100%}.consent{display:flex;gap:10px;align-items:flex-start;margin:14px 0 4px;font-weight:400;font-size:var(--fs-sm);color:var(--ink)}.consent input{width:20px;height:20px;margin-top:2px;flex:none}
+input[type=checkbox]{accent-color:var(--acc)}
 .pill{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 12px;font-size:13px;color:var(--mute);margin:0 6px 4px 0}
 .chips button{background:var(--card2);color:var(--ink);border:1px solid var(--line);margin:4px 8px 0 0;padding:8px 20px;box-shadow:none}
 .chips button.on{background:linear-gradient(135deg,#8fd400,#6ba800);color:#0b1200;border-color:transparent}
-.tabs{display:flex;gap:6px;margin:18px 0 0;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;position:sticky;top:8px;z-index:5;backdrop-filter:blur(12px);scrollbar-width:none}
+.tabs{display:flex;gap:6px;margin:18px 0 0;padding:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;position:sticky;top:8px;z-index:5;scrollbar-width:none;background-color:#10172b}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{background:transparent;color:var(--mute);margin:0;padding:9px 16px;white-space:nowrap;box-shadow:none;flex:1}
-.tabs button.on{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.35)}
+.tabs button.on{background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff;box-shadow:0 4px 14px rgba(91,140,255,.35)}
 .w{border-left:3px solid var(--bad);padding:10px 14px;margin:12px 0;background:var(--card2);border-radius:0 12px 12px 0}
 .g{border-left-color:var(--acc)}.fix{color:#a8e04a}
-.score{font-size:30px;font-weight:800;background:linear-gradient(90deg,#9be000,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-left:6px}
-h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
-.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.bar{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;color:var(--mute);font-size:13px}
-.bar b{display:block;font-size:24px;color:var(--ink)}.hide{display:none!important}.err{color:var(--bad);margin-top:10px}.note{color:var(--mute);font-size:14px}
+.score{font-size:var(--fs-2xl);font-weight:800;background:linear-gradient(90deg,#9be000,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-left:6px}
+h2{margin:6px 0 8px;letter-spacing:-.4px;font-size:var(--fs-xl);line-height:var(--lh-tight)}h3{margin:20px 0 6px;font-size:var(--fs-lg);line-height:1.3}
+.bars{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.bar{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center;color:var(--mute);font-size:var(--fs-xs)}
+.bar b{display:block;font-size:var(--fs-xl);color:var(--ink)}.hide{display:none!important}.err{color:var(--bad);margin-top:10px}.note{color:var(--mute);font-size:14px}
 .ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}.ba div{background:var(--card2);border-radius:12px;padding:12px;border:1px solid var(--line)}
 .kw span{display:inline-block;border-radius:8px;padding:3px 10px;margin:4px 6px 0 0;font-size:14px}.kw .ok{background:rgba(118,185,0,.15);color:#b7f27a}.kw .miss{background:rgba(255,107,122,.14);color:#ffb3b9}
 .bubble{padding:12px 16px;border-radius:16px;margin:10px 0;max-width:85%}.bubble.r{background:var(--card2);border:1px solid var(--line);border-bottom-left-radius:4px}.bubble.c{background:linear-gradient(135deg,#2a4aa8,#233c85);margin-left:auto;border-bottom-right-radius:4px}
 .cand{border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;background:var(--card2)}.cand textarea{min-height:80px;margin-top:8px}
 .rec-advance{color:var(--acc)}.rec-maybe{color:var(--warn)}.rec-reject{color:var(--bad)}
 .mic{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.live{color:var(--bad);font-weight:700;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.4}}
-.toggle{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-left:8px;vertical-align:bottom}.toggle button{margin:0;border-radius:0;background:var(--card2);color:var(--mute);padding:9px 18px;box-shadow:none}.toggle button.on{background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff}
-.foot{margin-top:40px;text-align:center;color:var(--mute);font-size:13px}
-@media(max-width:640px){.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}.card{padding:16px}.tabs button{padding:9px 12px;font-size:14px;flex:none}}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-left:8px;vertical-align:bottom}.toggle button{margin:0;border-radius:0;background:var(--card2);color:var(--mute);padding:9px 18px;box-shadow:none}.toggle button.on{background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff}
+.foot{margin-top:40px;text-align:center;color:var(--mute);font-size:var(--fs-xs);line-height:1.8}.foot a{color:var(--ink)}
+@media(max-width:640px){body{background-attachment:scroll}.bars{grid-template-columns:repeat(2,1fr)}.ba{grid-template-columns:1fr}.card{padding:16px}.tabs button{padding:9px 12px;font-size:14px;flex:none}}
 
 #rbPrev{background:#fff;color:#111;border-radius:10px;padding:28px 32px;margin-top:14px;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
 #rbPrev h1{margin:0;font-size:24px;color:#111}#rbPrev h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 6px;padding-bottom:3px;border-bottom:1.5px solid #333;color:#111}
@@ -63,7 +66,7 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 .rbe{border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
 @media print{body *{visibility:hidden}#rbPrev,#rbPrev *{visibility:visible}#rbPrev{position:absolute;left:0;top:0;width:100%;margin:0;border-radius:0;padding:0.4in}@page{margin:0.4in}}
 .star4{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0}.star4 div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card2)}
-.star4 b{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;margin-right:8px}
+.star4 b{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:8px;background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff;margin-right:8px}
 .starOut .blk{border-left:3px solid #5b8cff;padding:8px 14px;margin:10px 0;background:var(--card2);border-radius:0 12px 12px 0}
 .say{white-space:pre-wrap;line-height:1.6}.shareRow button,.shareRow a{margin:6px 8px 0 0}
 @media(max-width:640px){.star4{grid-template-columns:1fr}}
@@ -72,34 +75,35 @@ h2{margin:6px 0 8px;letter-spacing:-.4px}h3{margin:20px 0 6px}
 .cmp{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:10px 0}
 .up{color:#a8e04a;font-weight:800}.down{color:var(--bad);font-weight:800}
 .chart{width:100%;height:auto;background:var(--card2);border:1px solid var(--line);border-radius:12px}
-.legend span{display:inline-block;margin:6px 14px 0 0;font-size:13.5px;color:var(--mute)}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.legend span{display:inline-block;margin:6px 14px 0 0;font-size:var(--fs-xs);color:var(--mute)}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
 #prArea{display:none}
 body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #t-review,body.guided #t-match,body.guided #t-interview,body.guided #t-star,body.guided #t-brief,body.guided #t-nego,body.guided #t-bank,body.guided #t-code,body.guided #t-builder,body.guided #t-recruiter,body.guided #t-history,body.guided #prepLead{display:none}
 #guide{display:none}body.guided #guide{display:block}
-.steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}.steps span{border:1px solid var(--line);background:var(--card2);border-radius:99px;padding:4px 12px;font-size:13.5px;color:var(--mute)}.steps b{color:var(--acc)}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 4px}.steps span{border:1px solid var(--line);background:var(--card2);border-radius:99px;padding:4px 12px;font-size:var(--fs-xs);color:var(--mute)}.steps b{color:var(--acc)}
 .wl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.wl input{flex:1;min-width:200px}
 @media print{body.pr .wrap,body.pr #wake{display:none!important}body.pr #prArea{display:block;color:#111;background:#fff;font:13.5px/1.5 system-ui,Arial,sans-serif}body.pr #prArea *{visibility:visible;color:#111}
  body.pr #prArea h1{font-size:22px;margin:0 0 4px}body.pr #prArea h2{font-size:15px;margin:16px 0 4px;border-bottom:1.5px solid #333}body.pr #prArea p,body.pr #prArea li{margin:3px 0}body.pr #prArea .q{break-inside:avoid;margin:10px 0}}
 @media(max-width:640px){
- body{font-size:16px}.wrap{padding:16px 12px 70px}.hero{padding-top:12px}.sub{font-size:15.5px}
+ body{font-size:16px}.wrap{padding:16px 12px 70px}.hero{padding-top:12px}.sub{font-size:var(--fs-md)}
  button{padding:13px 18px;min-height:46px}.card button:not(.tabs button){max-width:100%}
  .toggle{display:flex;margin:12px 0 0;width:100%}.toggle button{flex:1;min-height:46px}
  .mic button{flex:1 1 140px}#micBar{gap:8px}
  .shareRow{display:flex;flex-direction:column}.shareRow a,.shareRow button{width:100%;margin:6px 0 0}.shareRow a button{width:100%}
- .bubble{max-width:95%}.chips button{padding:10px 18px}.tabs{top:4px}.feat span{font-size:12.5px}
+ .bubble{max-width:95%}.chips button{padding:10px 18px}.tabs{top:4px}.feat span{font-size:var(--fs-xs)}
  body.guided .feat{display:none}.cmp{flex-direction:column;align-items:flex-start}
 }
-</style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><div class="wrap">
+</style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><a class="skip" href="#profile">Skip to the main form</a><div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div>
-<div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>ATS job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
+<div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>Resume-to-job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
 <div id="mock" class="pill hide">demo mode (offline sample answers)</div>
 
 <div class="card" id="acct"><span id="acctInfo" class="note">Guest mode: everything works without an account. Log in only if you want to save your work.</span>
   <button id="acctOpen" class="ghost">Log in / Sign up</button><button id="acctHist" class="ghost hide">My history</button><button id="acctOut" class="ghost hide">Log out</button>
   <div id="acctForm" class="hide"><label for="acEmail">Email</label><input type="email" id="acEmail" autocomplete="email" maxlength="200">
     <label for="acPw">Password (8+ characters)</label><input type="password" id="acPw" autocomplete="current-password" maxlength="200">
+    <label class="consent" for="acAgree"><input type="checkbox" id="acAgree"><span>To create an account, I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>. (Not needed to log in.)</span></label>
     <button id="acLogin">Log in</button><button id="acReg" class="alt">Create account</button><div id="acErr" class="err" role="alert"></div></div></div>
 
 <div class="card" id="guide"><div class="steps"><span><b>1</b> Your target role</span><span><b>2</b> Paste your resume</span><span><b>3</b> Add the job description (optional)</span><span><b>4</b> Generate</span></div>
@@ -112,17 +116,17 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
   <textarea id="resume" placeholder="Paste your resume here..."></textarea>
   <input type="file" id="file" accept=".pdf,.docx,.txt" aria-label="Upload resume">
   <label for="jd">Job description (optional, needed for JD Match)</label><textarea id="jd" style="min-height:80px"></textarea>
-  <label>Country <span class="note" id="detNote">- we detect it from your resume and JD, tap to change</span></label>
-  <div class="chips" id="countries" role="group" aria-label="Country"><button data-c="US">US</button><button data-c="India">India</button><button data-c="Other">Other</button></div>
+  <label id="cLabel">Country <span class="note" id="detNote">- we detect it from your resume and JD, tap to change</span></label>
+  <div class="chips" id="countries" role="group" aria-labelledby="cLabel"><button data-c="US">US</button><button data-c="India">India</button><button data-c="Other">Other</button></div>
   <div id="profErr" class="err" role="alert"></div>
 </div>
 
-<div class="tabs" id="tabs" role="tablist">
+<div class="tabs" id="tabs" role="tablist" aria-label="Tools">
   <button data-t="prep" class="on">Interview Prep</button><button data-t="review">Resume Review</button><button data-t="match">JD Match</button>
   <button data-t="interview">Mock Interview</button><button data-t="star">STAR Builder</button><button data-t="brief">Company Brief</button><button data-t="nego">Salary Negotiation</button><button data-t="bank">Question Bank</button><button data-t="code">Coding Practice</button><button data-t="builder">Resume Builder</button><button data-t="recruiter">Recruiter Mode</button><button data-t="history" id="tabHist" class="hide">My History</button>
 </div>
 
-<section id="t-prep" class="card"><p class="note" id="prepLead">Your resume, your job description, your market. Get the questions you are most likely to face, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
+<section id="t-prep" class="card"><p class="note" id="prepLead">Your resume, your job description, your market. Get practice questions tailored to your resume and job description, each with a model answer built from your own experience. Coding profiles also get coding questions with solutions.</p>
   <button id="btnPrep">Generate my interview prep pack</button><div id="prepErr" class="err" role="alert"></div><div id="prepOut"></div></section>
 
 <section id="t-review" class="card hide"><button id="btnReview">Review my resume</button><div id="reviewOut"></div></section>
@@ -209,18 +213,18 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 </section>
 
 <section id="t-builder" class="card hide">
-  <p class="note">Build an ATS-friendly resume. Fill the form, pick a template, and download a PDF. Your draft is saved in this browser only.</p>
+  <p class="note">Build a clean, simple-format resume. Fill the form, pick a template, and download a PDF. Your draft is saved in this browser only.</p>
   <button id="rbFill" class="alt">Fill from the resume I pasted above</button><span id="rbBusy" class="pill hide">reading...</span>
   <label for="rbTpl">Template</label><select id="rbTpl"><option value="classic">Classic</option><option value="modern">Modern</option><option value="compact">Compact</option></select>
   <div id="rbForm">
-    <label>Name</label><input id="rb_name" maxlength="80"><label>Headline (e.g. QA Automation Engineer)</label><input id="rb_title" maxlength="100">
-    <label>Email</label><input id="rb_email" maxlength="120"><label>Phone</label><input id="rb_phone" maxlength="40">
-    <label>Location</label><input id="rb_location" maxlength="100"><label>Links (comma separated, e.g. LinkedIn, GitHub)</label><input id="rb_links" maxlength="400">
-    <label>Summary</label><textarea id="rb_summary" style="min-height:80px" maxlength="700"></textarea>
+    <label for="rb_name">Name</label><input id="rb_name" maxlength="80"><label for="rb_title">Headline (e.g. QA Automation Engineer)</label><input id="rb_title" maxlength="100">
+    <label for="rb_email">Email</label><input id="rb_email" maxlength="120"><label for="rb_phone">Phone</label><input id="rb_phone" maxlength="40">
+    <label for="rb_location">Location</label><input id="rb_location" maxlength="100"><label for="rb_links">Links (comma separated, e.g. LinkedIn, GitHub)</label><input id="rb_links" maxlength="400">
+    <label for="rb_summary">Summary</label><textarea id="rb_summary" style="min-height:80px" maxlength="700"></textarea>
     <button id="rbSum" class="ghost">Write a summary for me</button>
     <h3>Experience</h3><div id="rbExp"></div><button id="rbAddExp" class="ghost">+ Add job</button>
     <h3>Education</h3><div id="rbEdu"></div><button id="rbAddEdu" class="ghost">+ Add education</button>
-    <label>Skills (comma separated)</label><textarea id="rb_skills" style="min-height:60px"></textarea>
+    <label for="rb_skills">Skills (comma separated)</label><textarea id="rb_skills" style="min-height:60px"></textarea>
     <h3>Projects (optional)</h3><div id="rbPrj"></div><button id="rbAddPrj" class="ghost">+ Add project</button>
   </div>
   <div id="rbErr" class="err" role="alert"></div>
@@ -240,6 +244,6 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 <section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">MockRep stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
   <div class="wl"><input type="email" id="wlEmail" maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
 <div id="prArea"></div>
-<div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <a href="/privacy">Privacy Policy</a></div>
+<div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <br><a href="/terms">Terms</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/cookies">Cookies</a> &middot; <a href="https://github.com/ranjit-sahoo/mockrep" rel="noopener">Source code</a></div>
 </div>
 <script src="/static/app.js" defer></script></body></html>
