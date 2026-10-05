@@ -121,5 +121,15 @@ Pricing rule (documentation only):
 Business structure plan (documentation only): MockRep stays the author's personal product, separate from any other company. Payments start with an individual (unregistered) Razorpay account for India and Lemon Squeezy for international customers. After roughly 100 paying customers, the author plans to register a One Person Company (OPC) and move the business under it.
 **Payment security rule (applies to the future paid plan):** every price calculation and all payment verification happens strictly on the server. The client only asks to start a checkout for a plan name; the server chooses the amount and currency, creates the Razorpay order or Lemon Squeezy checkout itself, and unlocks a plan only after verifying the Razorpay payment signature (HMAC-SHA256 of order id and payment id with the secret key) or the Lemon Squeezy webhook signature. Amounts, plan state and country are never trusted from the browser, webhooks are idempotent, and no card data ever touches our servers.
 
+### Android release checklist (Google Play, planned, not started)
+
+MockRep is a web app and installable PWA today. If it is later wrapped as an Android app (Trusted Web Activity), keep these three things consistent on every release, or Google can reject the app or flag the account:
+
+1. **Package ID**: one application ID (for example `com.mockrep.app`), identical in the Android project and in Play Console. Never change it after the first upload.
+2. **versionCode**: always higher than the version already on Play (5, then 6, then 7). Bump it on every upload.
+3. **Upload key**: sign every upload with the same upload key that is registered for the app in Play Console. Back the keystore up and never regenerate it. Use Play App Signing. The `/.well-known/assetlinks.json` file on the website must carry the matching SHA-256 fingerprint.
+
+Nothing is submitted to any store before the hackathon judging period ends on Dec 15, 2026.
+
 ## License
 MIT. See [LICENSE](LICENSE).
