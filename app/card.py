@@ -165,7 +165,7 @@ def render_png(p: dict) -> bytes:
             sx += w + 10 * S
     # footer
     d.text((60 * S, 590 * S), "Practice your own AI mock interview - free", font=f(20), fill="#9fb0e6", anchor="lm")
-    d.text((1140 * S, 590 * S), (p.get("d") or "") + "  |  interviewpilot-bdzx.onrender.com", font=f(18), fill="#6f82c8", anchor="rm")
+    d.text((1140 * S, 590 * S), (p.get("d") or "") + "  |  mockrep.onrender.com", font=f(18), fill="#6f82c8", anchor="rm")
     img = img.resize((1200, 630), Image.LANCZOS)
     buf = BytesIO()
     img.save(buf, "PNG", optimize=True)
