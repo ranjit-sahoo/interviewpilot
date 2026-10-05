@@ -151,6 +151,9 @@ def _new_session(c: Conn, user_id: str) -> str:
     return token
 
 
+_EXISTS = "We could not create this account. If you already signed up, try logging in instead."
+
+
 def register(email: str, password: str):
     email = _clean_email(email)
     if len(password or "") < 8 or len(password) > 200:
@@ -159,11 +162,11 @@ def register(email: str, password: str):
     pw = hash_password(password)
     with Conn() as c:
         if c.run("SELECT id FROM users WHERE email=?", (email,)):
-            raise ValueError("An account with this email already exists. Try logging in.")
+            raise ValueError(_EXISTS)
         try:
             c.run("INSERT INTO users (id, email, pw_hash, created) VALUES (?, ?, ?, ?)", (uid, email, pw, time.time()))
         except Exception:  # unique race
-            raise ValueError("An account with this email already exists. Try logging in.")
+            raise ValueError(_EXISTS)
         return {"id": uid, "email": email}, _new_session(c, uid)
 
 
