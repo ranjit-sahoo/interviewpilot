@@ -517,3 +517,32 @@ def test_budget_exhausted_returns_503(monkeypatch):
     monkeypatch.setattr("app.prep.build", boom)
     r = c.post("/api/prep", json={"resume": "x" * 60, "role": "QA Engineer", "country": "US"})
     assert r.status_code == 503 and "capacity" in r.json()["detail"]
+
+
+def test_grounding_helpers():
+    from app.services import invented_details, ungrounded_names
+
+    src = ("Built a framework with BasePage and TestNG, 450 tests, cut regression from 2 days to 3 hours", "run the suites")
+    assert ungrounded_names("How does your ConfigReader pick a file?", *src) == ["ConfigReader"]
+    assert ungrounded_names("How did you design BasePage?", *src) == []
+    assert invented_details("I used 16 threads on 4 Grid nodes", *src)
+    assert invented_details("I wrote a DataProvider with Jackson", *src)
+    assert not invented_details("I cut regression from 2 days to 3 hours across 450 tests with BasePage", *src)
+    assert "[add your number]" in "x [add your number]"
+
+
+def test_followup_naming_unsaid_thing_is_dropped(monkeypatch):
+    from app import llm, services
+
+    def fake(task, system, user, model=None):
+        if task == "turn":
+            return {"scores": {"clarity": 3, "depth": 3, "correctness": 3, "star": 3}, "feedback": "ok", "stronger_answer": "x", "tips": [],
+                    "communication": {}, "followup": "How does your ConfigReader load files?"}
+        from app import mock
+
+        return mock.reply(task, user)
+
+    monkeypatch.setattr(llm, "chat_json", fake)
+    d = c.post("/api/session", json={"resume": "QA engineer with Selenium and TestNG experience " * 3, "role": "QA", "country": "US", "followups": True}).json()
+    r = c.post(f"/api/session/{d['session_id']}/answer", json={"answer": "I built a Selenium suite with TestNG."}).json()
+    assert "followup" not in r or not r["followup"]

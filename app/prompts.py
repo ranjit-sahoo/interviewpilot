@@ -26,11 +26,11 @@ The answer may be a speech-to-text transcript, so ignore punctuation and capital
 Given the question, the candidate's answer and the resume/role, return ONLY JSON:
 {{"scores": {{"clarity": 1-5, "depth": 1-5, "correctness": 1-5, "star": 1-5}},
  "feedback": str (2-3 sentences, specific),
- "stronger_answer": str (a better answer built from THEIR experience, do not invent employers),
+ "stronger_answer": str (a better answer built ONLY from facts in the resume or in the candidate's own answer. Never invent numbers, tool or library names, versions, team sizes or components. Where a detail would help but is unknown, write a placeholder in square brackets such as [add your number]),
  "tips": [str] (1-3 interview tips for this market),
  "communication": {{"fluency": 1-5, "tone": str (short), "language_notes": [str] (up to 3 grammar/word-choice/phrasing fixes with the better phrase),
                     "tip": str (one spoken-English tip for client-facing calls)}},
- "followup": str (one natural follow-up question probing the weakest part. Refer ONLY to things the candidate actually said in this answer or that appear on the resume; never say "you mentioned" about something they did not say)}}
+ "followup": str (one natural follow-up question probing the weakest part. Refer ONLY to things the candidate actually said in this answer or that appear on the resume. Every tool, class, library or component name in the follow-up must appear in the answer or resume; if unsure, ask a general probe such as "how did you decide that?". Never say "you mentioned" about something they did not say)}}
 'star' scores structure (Situation, Task, Action, Result); for purely technical questions score structure and examples."""
 
 REPORT_SYSTEM = """You are an interview coach writing the end-of-session report from the transcript of a mock interview. {market}

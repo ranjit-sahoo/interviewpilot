@@ -1,3 +1,4 @@
+import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -147,6 +148,27 @@ def load_interview(sid: str) -> dict:
     return _interview(sid)
 
 
+_CAMEL = re.compile(r"\b[A-Za-z]*[a-z][A-Z][A-Za-z]*\b")
+_NUM = re.compile(r"\d+(?:\.\d+)?")
+
+
+def _norm(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def ungrounded_names(text: str, *sources: str) -> list[str]:
+    """CamelCase identifiers (class, tool or library names) in `text` that appear nowhere in the sources."""
+    hay = _norm(" ".join(sources))
+    return [t for t in dict.fromkeys(_CAMEL.findall(text or "")) if _norm(t) not in hay]
+
+
+def invented_details(text: str, *sources: str) -> bool:
+    """True when a model-written answer contains numbers or CamelCase names the candidate never gave."""
+    hay = " ".join(sources)
+    nums = set(_NUM.findall(hay))
+    return bool(ungrounded_names(text, hay)) or any(n not in nums for n in _NUM.findall(text or ""))
+
+
 def answer(sid: str, text: str) -> dict:
     with _lock(sid):
         s = _interview(sid)
@@ -170,10 +192,15 @@ def answer(sid: str, text: str) -> dict:
             raise llm.LLMError("bad feedback")
         fb.setdefault("communication", {})
         fb["communication"]["metrics"] = comms.analyze(text)
+        src = (s["resume"], s["jd"], main_q["question"], text)
+        if invented_details(str(fb.get("stronger_answer") or ""), *src):
+            fb["stronger_answer_note"] = "This sample includes example details (numbers or names) you did not give. Replace them with your real ones, or leave them out."
         s["turns"].append({"question": q, "answer": text, "feedback": fb, "followup": bool(pend)})
         s.setdefault("group", []).append(_perf(fb))
         done_n = pend["n"] if pend else 0
         fu = " ".join(str(fb.get("followup") or "").split())[:400]
+        if fu and ungrounded_names(fu, s["resume"], s["jd"], main_q["question"], text, *(t["answer"] for t in s["turns"])):
+            fu = ""  # the follow-up names something the candidate never said: skip it rather than mislead
         try:
             depth = float((fb.get("scores") or {}).get("depth", 3))
         except (TypeError, ValueError):

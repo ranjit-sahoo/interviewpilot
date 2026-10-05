@@ -504,7 +504,7 @@ $('btnAns').onclick=async()=>{stopMic();if(TTS)TTS.cancel();$('ansErr').textCont
   try{const d=await post(`/api/session/${sid}/answer`,{answer:text});const f=d.feedback,s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};
     const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
     $('fb').innerHTML=`<h3>Feedback</h3><div class="bars">${['clarity','depth','correctness','star'].map(k=>`<div class="bar"><b>${esc(s[k])}/5</b>${k==='star'?'STAR':k}</div>`).join('')}</div>
-      <p>${esc(f.feedback)}</p><div class="w g"><b>A stronger answer</b><br>${esc(f.stronger_answer)}</div>${ul(f.tips)}
+      <p>${esc(f.feedback)}</p><div class="w g"><b>A stronger answer</b><br>${esc(f.stronger_answer)}${f.stronger_answer_note?`<p class="note">${esc(f.stronger_answer_note)}</p>`:''}</div>${ul(f.tips)}
       <h3>Communication</h3><p><span class="pill">Fluency ${esc(cm.fluency)}/5</span><span class="pill">${esc(cm.tone)}</span><span class="pill">${esc(m.word_count)} words</span><span class="pill">${esc(m.filler_total||0)} filler words</span></p>
       ${fl?`<p class="note">Fillers: ${fl}</p>`:''}${m.too_short?'<p class="note">Answer was short. Aim for 60-90 seconds with an example.</p>':''}${ul(cm.language_notes)}${cm.tip?`<p><b>Tip:</b> ${esc(cm.tip)}</p>`:''}
       ${(!fuOn&&f.followup)?`<p><b>Interviewer follow-up:</b> ${esc(f.followup)}</p>`:''}${d.difficulty?`<p class="pill">Interviewer made the next question ${d.difficulty==='harder'?'harder: you answered strongly':'a little easier: let us build up'}</p>`:''}<div id="nextArea"></div>`;
