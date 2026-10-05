@@ -60,3 +60,28 @@ def test_product_name_is_mockrep_everywhere_users_see_it():
         r = c.get(f"/static/icons/{n}.png")
         assert r.status_code == 200 and r.content[:4] == b"\x89PNG"
     assert c.get("/static/icons/evil.png").status_code == 404
+
+
+def test_terms_and_cookies_pages_and_footers():
+    c = TestClient(app)
+    for path, needle in (("/terms", "Terms of Use"), ("/cookies", "Cookie Policy")):
+        r = c.get(path)
+        assert r.status_code == 200 and needle in r.text and "MockRep" in r.text
+        assert "InterviewPilot" not in r.text
+        assert 'href="/privacy"' in r.text
+    assert "ip_session" in c.get("/cookies").text
+    assert "ranjitkumarsahoo77@gmail.com" in c.get("/terms").text
+    home = c.get("/").text
+    assert 'href="/terms"' in home and 'href="/privacy"' in home and 'href="/cookies"' in home
+    assert 'id="acAgree"' in home
+    sm = c.get("/sitemap.xml").text
+    assert "/terms" in sm and "/cookies" in sm
+    assert "/terms" in c.get("/stats").text
+
+
+def test_signup_consent_flag():
+    c = TestClient(app)
+    r = c.post("/api/auth/register", json={"email": "noagree@example.com", "password": "longenough1", "agree": False})
+    assert r.status_code == 400
+    r = c.post("/api/auth/register", json={"email": "agree@example.com", "password": "longenough1", "agree": True})
+    assert r.status_code == 200
