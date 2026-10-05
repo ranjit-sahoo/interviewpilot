@@ -611,6 +611,20 @@ def service_worker():
     return FileResponse(os.path.join(STATIC, "sw.js"), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
 
 
+@app.get("/robots.txt")
+def robots():
+    body = f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /c/\n\nSitemap: {PUBLIC_BASE.rstrip('/')}/sitemap.xml\n"
+    return Response(body, media_type="text/plain")
+
+
+@app.get("/sitemap.xml")
+def sitemap():
+    base = PUBLIC_BASE.rstrip("/")
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/privacy"))
+    xml = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n'
+    return Response(xml, media_type="application/xml")
+
+
 @app.get("/privacy")
 def privacy():
     return FileResponse(os.path.join(STATIC, "privacy.html"), media_type="text/html")
