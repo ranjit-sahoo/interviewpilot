@@ -247,11 +247,25 @@ def extract(file: UploadFile = File(...)):
     return {"text": text}
 
 
+def _ip_country(request: Request):
+    """Country from the CDN's IP check (Cloudflare). Returns India / US / Other, or None when there is no reliable signal."""
+    cc = request.headers.get("cf-ipcountry", "").strip().upper()
+    if not cc or cc in ("XX", "T1"):
+        return None
+    return {"IN": "India", "US": "US"}.get(cc, "Other")
+
+
+def _cc(request: Request, supplied: str) -> str:
+    """The IP-derived country always wins; what the client posts is used only when the IP gives no signal."""
+    return _ip_country(request) or supplied
+
+
 @app.get("/api/geo")
 def geo(request: Request):
     """Best-effort guess from the CDN's country header. Only a starting point; resume content refines it."""
     cc = request.headers.get("cf-ipcountry", "").strip().upper()
-    return {"country": {"IN": "India", "US": "US"}.get(cc, "Other") if cc and cc not in ("XX", "T1") else None, "code": cc or None}
+    ip = _ip_country(request)
+    return {"country": ip, "code": cc or None, "locked": ip is not None}
 
 
 @app.post("/api/detect-country", dependencies=LIMITED)
@@ -268,21 +282,22 @@ def resume_review(
     jd: str = Form(""),
     country: str = Form("US"),
     file: UploadFile | None = File(None),
+    request: Request = None,
 ):
     text = _read_upload(file) if file is not None and file.filename else resume
-    return services.review_resume(_need_resume(text), _need_role(role), jd, country)
+    return services.review_resume(_need_resume(text), _need_role(role), jd, _cc(request, country))
 
 
 @app.post("/api/match", dependencies=LIMITED)
-def match(body: MatchIn):
+def match(body: MatchIn, request: Request):
     if len(body.jd.strip()) < 30:
         raise HTTPException(400, "Paste the job description to compare against.")
-    return services.match_jd(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+    return services.match_jd(_need_resume(body.resume), _need_role(body.role), body.jd, _cc(request, body.country))
 
 
 @app.post("/api/session", dependencies=LIMITED)
-def start(body: StartIn):
-    return services.start_session(_resume_or_blank(body.resume), _need_role(body.role), body.jd, body.country, body.level, body.followups)
+def start(body: StartIn, request: Request):
+    return services.start_session(_resume_or_blank(body.resume), _need_role(body.role), body.jd, _cc(request, body.country), body.level, body.followups)
 
 
 @app.post("/api/session/{sid}/answer", dependencies=LIMITED)
@@ -312,8 +327,8 @@ def report(sid: str, request: Request):
 
 
 @app.post("/api/negotiation", dependencies=LIMITED)
-def nego_start(body: NegoStartIn):
-    return services.start_negotiation(_resume_or_blank(body.resume), _need_role(body.role), body.country, body.current)
+def nego_start(body: NegoStartIn, request: Request):
+    return services.start_negotiation(_resume_or_blank(body.resume), _need_role(body.role), _cc(request, body.country), body.current)
 
 
 @app.post("/api/negotiation/{sid}/say", dependencies=LIMITED)
@@ -329,9 +344,9 @@ def nego_report(sid: str):
 
 
 @app.post("/api/recruiter/screen", dependencies=LIMITED)
-def screen(body: ScreenIn):
+def screen(body: ScreenIn, request: Request):
     return _guard(
-        services.screen_candidates, [c.model_dump() for c in body.candidates], _need_role(body.role), body.jd, body.country
+        services.screen_candidates, [c.model_dump() for c in body.candidates], _need_role(body.role), body.jd, _cc(request, body.country)
     )
 
 
@@ -348,16 +363,16 @@ def bank_roles():
 
 
 @app.post("/api/bank", dependencies=LIMITED)
-def question_bank(body: BankIn):
+def question_bank(body: BankIn, request: Request):
     """Curated role questions (instant) plus optional AI company-specific questions."""
     if not body.role.strip() and not body.company.strip():
         raise HTTPException(400, "Enter a role or a company.")
     out = bank.curated(body.role)
     out["company"] = None
-    out["profile"] = companies.find(body.company, body.country)
+    out["profile"] = companies.find(body.company, _cc(request, body.country))
     if body.company.strip() and (out["profile"] is None or body.ai):
         try:
-            out["company"] = bank.company_questions(body.company, body.role, body.country)
+            out["company"] = bank.company_questions(body.company, body.role, _cc(request, body.country))
         except llm.LLMError:
             out["company_error"] = "Company-specific questions are unavailable right now. Showing the role bank."
     return out
@@ -411,25 +426,25 @@ def builder_parse(body: DetectIn):
 
 
 @app.post("/api/builder/polish", dependencies=LIMITED)
-def builder_polish(body: PolishIn):
-    return {"bullets": _guard(builder.polish, body.role, body.bullets, body.country)}
+def builder_polish(body: PolishIn, request: Request):
+    return {"bullets": _guard(builder.polish, body.role, body.bullets, _cc(request, body.country))}
 
 
 @app.post("/api/builder/summary", dependencies=LIMITED)
-def builder_summary(body: SummaryIn):
-    return {"summary": _guard(builder.summary, body.role, body.facts, body.country)}
+def builder_summary(body: SummaryIn, request: Request):
+    return {"summary": _guard(builder.summary, body.role, body.facts, _cc(request, body.country))}
 
 
 @app.post("/api/prep", dependencies=LIMITED)
-def prep_pack(body: StartIn):
+def prep_pack(body: StartIn, request: Request):
     """The hero flow: tailored questions with model answers (and coding questions) from resume + JD."""
-    return prep.build(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+    return prep.build(_need_resume(body.resume), _need_role(body.role), body.jd, _cc(request, body.country))
 
 
 @app.post("/api/prep/coding", dependencies=LIMITED)
-def prep_coding(body: StartIn):
+def prep_coding(body: StartIn, request: Request):
     """Coding questions for technical profiles, loaded separately so the core pack shows up sooner."""
-    return prep.build_coding(_need_resume(body.resume), _need_role(body.role), body.jd, body.country)
+    return prep.build_coding(_need_resume(body.resume), _need_role(body.role), body.jd, _cc(request, body.country))
 
 
 class StarIn(BaseModel):
@@ -450,17 +465,17 @@ class CardIn(BaseModel):
 
 
 @app.post("/api/star", dependencies=LIMITED)
-def star_build(body: StarIn):
+def star_build(body: StarIn, request: Request):
     if len(body.experience.strip()) < 30:
         raise HTTPException(400, "Describe your experience in a few sentences (30+ characters).")
-    return star.build(body.experience, body.question, body.role, body.country)
+    return star.build(body.experience, body.question, body.role, _cc(request, body.country))
 
 
 @app.post("/api/company-brief", dependencies=LIMITED)
-def company_brief(body: BriefIn):
+def company_brief(body: BriefIn, request: Request):
     if len(body.company.strip()) < 2:
         raise HTTPException(400, "Enter a company name.")
-    return brief.build(body.company, body.role, body.country)
+    return brief.build(body.company, body.role, _cc(request, body.country))
 
 
 def _base(request: Request) -> str:
