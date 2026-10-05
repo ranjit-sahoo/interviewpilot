@@ -58,6 +58,12 @@ def _client():
     return OpenAI(base_url=BASE_URL, api_key=os.environ["NEBIUS_API_KEY"], timeout=90, max_retries=2)
 
 
+def _log_fail(model, e):
+    """Log why a model call failed (never the key) so outages are visible in the host logs."""
+    import logging
+    logging.getLogger("uvicorn.error").error("LLM call failed model=%s type=%s status=%s msg=%s", model, type(e).__name__, getattr(e, "status_code", None), str(e)[:300])
+
+
 def chat(messages, model: str = FAST_MODEL, **kw) -> str:
     _budget()
     from app import spend
@@ -80,8 +86,10 @@ def chat(messages, model: str = FAST_MODEL, **kw) -> str:
                 with _SLOTS:
                     resp = _client().chat.completions.create(model=model, messages=messages, **kw)
             except Exception as e2:
+                _log_fail(model, e2)
                 raise LLMError(f"model call failed: {type(e2).__name__}") from e2
         else:
+            _log_fail(model, e)
             raise LLMError(f"model call failed: {type(e).__name__}") from e
     out = resp.choices[0].message.content or ""
     try:
