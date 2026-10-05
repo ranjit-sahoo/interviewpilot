@@ -113,6 +113,7 @@ Domain day checklist (when the custom domain lands): (a) decide main domain vs s
 Pricing rule (documentation only):
 - Rs 499 per year for visitors with an India IP address. $49 per year for every other country (US, UK, UAE, Canada and anywhere else).
 - The pricing country is never chosen by the user. IP geolocation alone sets the price shown.
+- Implemented today for content: the app takes its country from the CDN IP check (Cloudflare `cf-ipcountry`) on the server and ignores the country a client posts; the country chips are locked once detected. When payments launch, price and currency must be decided by that same server-side IP check, never from the browser. An IP lock is a deterrent, not proof: VPNs and proxies can change the detected country, which is why the Rs 499 tier also requires an Indian-issued card.
 - The Rs 499 tier requires BOTH an India IP address AND an Indian-issued card at payment (for example Razorpay for INR).
 - The $49 tier has no card-country requirement. Indians living abroad, including those with Indian cards, pay $49 (for example via Stripe).
 - IP location is not a guarantee of physical location. This is an eligibility rule, not an anti-abuse guarantee; a small amount of VPN leakage is accepted at this scale.
