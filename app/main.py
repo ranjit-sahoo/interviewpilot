@@ -7,10 +7,10 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from app import accounts, bank, brief, builder, card, coding, companies, llm, prep, services, star
+from app import accounts, bank, brief, builder, card, coding, companies, icons, llm, prep, services, star
 from app.guard import FailLimiter, RateLimiter, client_key, rate_limit
 
-app = FastAPI(title="InterviewPilot", docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title="MockRep", docs_url=None, redoc_url=None, openapi_url=None)
 from app import analytics as _analytics  # noqa: E402
 
 _analytics.install(app)
@@ -603,6 +603,14 @@ def history_delete(iid: str, u=Depends(need_user)):
     if not accounts.delete_item(u["id"], iid):
         raise HTTPException(404, "Not found")
     return {"ok": True}
+
+
+@app.get("/static/icons/{name}.png")
+def app_icon(name: str):
+    data = icons.render(name)
+    if data is None:
+        raise HTTPException(404, "Not found")
+    return Response(data, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/sw.js")
