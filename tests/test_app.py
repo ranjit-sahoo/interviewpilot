@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app import llm
+from app import main as appmod
 
 c = TestClient(app)
 RESUME = "Jane Doe. QA engineer with 5 years of experience in Selenium, Java and API testing at Acme Corp."
@@ -176,7 +177,7 @@ def test_same_session_parallel_answers_are_serialized():
 
 
 def test_ui_has_voice_controls():
-    html = c.get("/").text
+    html = c.get("/").text + c.get("/static/app.js").text
     for needle in ('id="vAccent"', 'en-IN', 'id="vRate"', "localStorage", "speechSynthesis"):
         assert needle in html
 
@@ -402,7 +403,7 @@ def test_report_includes_followup_turns_and_score_card():
     r = c.post(f"/api/session/{sid}/card", json={"name": "Jane <b>Doe</b>"}, headers={"host": "example.test"})
     assert r.status_code == 200
     d = r.json()
-    assert d["url"].startswith("http://example.test/c/") and d["image"].endswith(".png") and d["verdict"]
+    assert "example.test" not in d["url"] and d["url"].startswith(appmod.PUBLIC_BASE.rstrip("/") + "/c/") and d["image"].endswith(".png") and d["verdict"]
     tok = d["url"].rsplit("/c/", 1)[1]
     img = c.get(f"/c/{tok}.png")
     assert img.status_code == 200 and img.content[:4] == b"\x89PNG"
