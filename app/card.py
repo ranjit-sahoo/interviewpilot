@@ -186,4 +186,4 @@ def page(p: dict, token: str, base: str) -> str:
 img{{max-width:100%;width:900px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.5)}}
 a.b{{display:inline-block;margin:22px 0;padding:14px 26px;background:linear-gradient(135deg,#6f9bff,#4a76ee);color:#fff;border-radius:12px;text-decoration:none;font-weight:700}}</style></head>
 <body><h1 style="font-size:22px">{title}</h1><img src="{img}" alt="Mock interview score card: {p['s']:.1f} out of 5"><br>
-<a class="b" href="{base}/">Try your own free mock interview</a><p style="color:#9fb0e6">InterviewPilot - AI interview coach for India and US candidates</p></body></html>"""
+<a class="b" href="{base}/">Try your own free mock interview</a><p style="color:#9fb0e6">InterviewPilot - AI interview coach for India and US candidates &middot; <a href="/privacy" style="color:#9fb0e6">Privacy Policy</a></p></body></html>"""
