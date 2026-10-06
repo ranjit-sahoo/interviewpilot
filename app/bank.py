@@ -5,7 +5,7 @@ Nemotron model, cached in memory, and fall back to the curated set if the model 
 """
 import threading
 
-from app import llm, market
+from app import llm, market, singleflight
 from app import bank_in, bank_us
 
 # (type, level, question, how to answer)
@@ -197,7 +197,7 @@ def _clean(s: str, n: int) -> str:
     return " ".join((s or "").split())[:n]
 
 
-def company_questions(company: str, role: str, country: str) -> dict:
+def _company_questions_uncached(company: str, role: str, country: str) -> dict:
     company, role = _clean(company, 80), _clean(role, 120) or "this role"
     key = (company.lower(), role.lower(), market.normalize(country))
     with _cache_lock:
@@ -229,3 +229,10 @@ def company_questions(company: str, role: str, country: str) -> dict:
             _cache.clear()
         _cache[key] = res
     return res
+
+
+def company_questions(company: str, role: str, country: str) -> dict:
+    """Same company, role and country at the same moment share one AI call."""
+    k = (_clean(company, 80).lower(), (_clean(role, 120) or "this role").lower(), market.normalize(country))
+    with singleflight.lock(("bank",) + k):
+        return _company_questions_uncached(company, role, country)
