@@ -2,7 +2,7 @@
 import threading
 from urllib.parse import quote
 
-from app import companies, llm, market, prompts
+from app import companies, llm, market, prompts, singleflight
 
 _cache: dict[tuple, dict] = {}
 _lock = threading.Lock()
@@ -17,7 +17,7 @@ def _list(v, n=5, w=300):
     return [_clean(x, w) for x in (v if isinstance(v, list) else []) if _clean(x, w)][:n]
 
 
-def build(company: str, role: str, country: str) -> dict:
+def _build_uncached(company: str, role: str, country: str) -> dict:
     company, role = _clean(company, 80), _clean(role, 120) or "the role"
     country = market.normalize(country)
     key = (company.lower(), role.lower(), country)
@@ -50,3 +50,10 @@ def build(company: str, role: str, country: str) -> dict:
             _cache.pop(next(iter(_cache)))
         _cache[key] = res
     return res
+
+
+def build(company: str, role: str, country: str) -> dict:
+    """Same company, role and country at the same moment share one AI call."""
+    k = (_clean(company, 80).lower(), (_clean(role, 120) or "the role").lower(), market.normalize(country))
+    with singleflight.lock(("brief",) + k):
+        return _build_uncached(company, role, country)
