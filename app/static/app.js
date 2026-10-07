@@ -386,7 +386,7 @@ function answersHtml(){const a=mainQ();if(!a.length)return '';const lab=a.map((_
   h+='<p class="note">Recordings are kept only on this device while this page is open. They are never uploaded.</p>';return h}
 async function loadReport(){$('ansErr').textContent='';const ra=$('retryArea');if(ra)ra.innerHTML='';
   try{const r=await api(`/api/session/${sid}/report`);lastReport=r;const el=$('report');el.classList.remove('hide');
-  el.innerHTML=`<h2>Session report ${ringSvg(r.overall_score,5,96)}</h2><p>${esc(r.summary)}</p>
+  el.innerHTML=`<h2>Session report ${ringSvg(r.overall_score,5,96)}</h2>${r.session_counts?`<p class="note">${esc(r.session_counts.main_questions)} main questions · ${esc(r.session_counts.followups)} follow-ups · ${esc(r.session_counts.total_answers)} answers assessed from text</p>`:''}<p>${esc(r.summary)}</p>
    ${r.communication_summary?`<h3>Communication</h3><p>${esc(r.communication_summary)}</p>`:''}
    <h3>Strengths</h3>${ul(r.strengths)}<h3>Gaps</h3>${ul(r.gaps)}
    <h3>7-day practice plan</h3><ol>${(r.plan_7_days||[]).map(x=>`<li><b>Day ${esc(x.day)}:</b> ${esc(x.task)}</li>`).join('')}</ol><p><button class="ghost" data-pdf="report">Download report as PDF</button></p>${me?'<p class="note">Your scores (not your answers) were added to My History > Your progress.</p>':'<p class="note">Log in to track your scores over time.</p>'}`;
