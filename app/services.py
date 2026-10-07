@@ -289,23 +289,62 @@ def skill_scores(sid: str) -> dict:
     return {k: round(sum(v) / len(v), 2) for k, v in acc.items() if v}
 
 
+def _ground_report(rep: dict, turns: list) -> dict:
+    """Keep model prose within text evidence and server-owned session counts."""
+    main = sum(not t.get("followup") for t in turns)
+    followups = len(turns) - main
+    unsupported = re.compile(
+        r"\b(spoken english|spoken language|speaking|speech|vocal|pronunciation|accent|listening|"
+        r"processing issue|confident|confidence|fluent|fluency)\b", re.I
+    )
+    count = re.compile(
+        r"\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+"
+        r"(?:consecutive\s+)?questions?\s+(?:from|in|of)\s+(?:this|the)\s+session\b", re.I
+    )
+    def clean(value):
+        if isinstance(value, str):
+            sentences = re.split(r"(?<=[.!?])\s+", value)
+            kept = [sentence for sentence in sentences if not unsupported.search(sentence)]
+            text = " ".join(kept).strip()
+            text = count.sub(f"{main} main questions and {followups} follow-ups from this session", text)
+            return text or "Review the answer text for clarity, relevance and supporting evidence."
+        if isinstance(value, list):
+            return [clean(x) for x in value]
+        if isinstance(value, dict):
+            return {k: clean(v) for k, v in value.items()}
+        return value
+    rep = clean(rep)
+    rep["communication_summary"] = (
+        "Communication feedback is based on answer text: wording, structure and relevance. "
+        "Audio quality, pronunciation, listening and vocal confidence were not assessed."
+    )
+    rep["session_counts"] = {"main_questions": main, "followups": followups, "total_answers": len(turns)}
+    rep["evidence_basis"] = "answer_text"
+    return rep
+
+
 def report(sid: str) -> dict:
     with _lock(sid):
         s = _interview(sid)
         if "report" in s:
-            return s["report"]
+            return _ground_report(s["report"], s["turns"])
         if not s["turns"]:
             raise ValueError("answer at least one question first")
         transcript = "\n\n".join(
             f"Q ({t['question']['type']}): {t['question']['question']}\nA: {t.get('best_answer') or t['answer']}\n"
             f"Scores: {(t.get('best') or t['feedback']).get('scores')}\nFeedback: {(t.get('best') or t['feedback']).get('feedback')}\n"
-            f"Speech metrics: {(t.get('best') or t['feedback'])['communication'].get('metrics')}"
+            f"Answer-text metrics: {(t.get('best') or t['feedback'])['communication'].get('metrics')}"
             + (f"\n(Candidate retried this answer {len(t['retries'])} time(s) and improved it.)" if t.get("best") else "")
             for t in s["turns"]
         )
-        rep = llm.chat_json(
-            "report", _sys(prompts.REPORT_SYSTEM, s["country"]), f"ROLE: {s['role']} (difficulty: {s.get('level', 'auto')})\n\n{transcript}", model=llm.STRONG_MODEL
+        main = sum(not t.get("followup") for t in s["turns"])
+        context = (
+            f"ROLE: {s['role']} (difficulty: {s.get('level', 'auto')})\n"
+            f"EVIDENCE: answer text only, not audio. Exact completed counts: {main} main questions, "
+            f"{len(s['turns']) - main} follow-ups, {len(s['turns'])} total answers.\n\n{transcript}"
         )
+        rep = llm.chat_json("report", _sys(prompts.REPORT_SYSTEM, s["country"]), context, model=llm.STRONG_MODEL)
+        rep = _ground_report(rep, s["turns"])
         s["report"] = rep
         db.save(sid, s)
         return rep
