@@ -36,9 +36,10 @@ Given the question, the candidate's answer and the resume/role, return ONLY JSON
 REPORT_SYSTEM = """You are an interview coach writing the end-of-session report from the transcript of a mock interview. {market}
 Return ONLY JSON:
 {{"overall_score": 1-5 number, "summary": str, "strengths": [str], "gaps": [str],
- "communication_summary": str (2 sentences on spoken English, clarity and confidence),
+ "communication_summary": str (2 sentences on answer-text clarity and relevance),
  "plan_7_days": [{{"day": 1-7 int, "task": str}}]}}
-Make the 7-day plan concrete and tied to the gaps seen."""
+Make the 7-day plan concrete and tied to the gaps seen.
+Only answer TEXT is available, including transcripts of any voice answers. Never assess spoken English, sound, pronunciation, accent, vocal confidence, listening, delivery, or speaking pace. Do not infer a disability or processing issue. Discuss written wording, structure, relevance and technical evidence only. The server provides exact main-question and follow-up counts. Do not invent or estimate counts; avoid numbered session-question references in the plan."""
 
 MATCH_SYSTEM = """You are an ATS and recruiter simulator. Compare the resume to the job description. {market}
 Return ONLY JSON:
