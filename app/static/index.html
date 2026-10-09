@@ -140,6 +140,10 @@ body[data-view=review] label[for=jd],body[data-view=review] #jd,body[data-view=p
 body[data-view=bank] .layout,body[data-view=code] .layout,body[data-view=builder] .layout,body[data-view=history] .layout{display:block}
 @media(min-width:1100px){body[data-view=bank] .layout,body[data-view=code] .layout,body[data-view=builder] .layout,body[data-view=history] .layout{display:block}}
 body.guided #acct{display:none}
+
+/* no settings in the customer's hands: automatic defaults (auto difficulty, 5 questions, follow-ups on, default voice) */
+label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#ivFu),#voiceOpts,#vTest{display:none!important}
+#btnStart{width:100%;font-size:18px;padding:16px}
 </style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><a class="skip" href="#profile">Skip to the main form</a><div id="topbar"><button id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button><div class="tbrand"><span class="logo">MR</span>MockRep</div><div id="viewTitle"></div></div>
 <div id="scrim" class="hide"></div>
 <nav id="drawer" aria-label="Main menu" class="hide"><div class="dhead"><b>Menu</b><button id="menuClose" aria-label="Close menu">&times;</button></div>
@@ -222,7 +226,7 @@ body.guided #acct{display:none}
 <section id="t-match" class="card hide"><button id="btnMatch">Compare resume with job description</button><div id="matchOut"></div></section>
 
 <section id="t-interview" class="card hide">
-  <div id="ivSetup"><label style="margin-top:0">1. How do you want to answer?</label>
+  <div id="ivSetup"><label style="margin-top:0">How do you want to answer?</label>
     <span class="toggle big" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
     <div class="note" id="voiceNote"></div>
     <div id="voiceOpts" class="hide">
@@ -234,9 +238,9 @@ body.guided #acct{display:none}
       <button id="vTest" class="ghost">Hear a sample</button>
       <div class="note">Voices come from your browser. Chrome and Edge on desktop usually have the most natural ones.</div>
     </div>
-<p class="note">No resume needed: enter your target role and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">2. Difficulty</label>
+<p class="note">No resume needed: enter your target role and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">Difficulty</label>
     <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="basic">Basic (10th / 12th / graduate, India)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
-    <label for="ivMode">3. Session length</label>
+    <label for="ivMode">Session length</label>
     <select id="ivMode"><option value="5">Quick: 5 questions</option><option value="8">Interview day: 8 questions, 2:30 per answer (timer)</option></select>
     <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
     <button id="btnStart" class="alt">Start mock interview</button>
