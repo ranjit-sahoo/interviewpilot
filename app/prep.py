@@ -7,7 +7,7 @@ import hashlib
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-from app import llm, market
+from app import basic_in, llm, market
 
 CORE_SYSTEM = """You are a senior interviewer and coach. {market}
 Using ONLY the candidate's resume, target role and job description (if given), write exactly {spec}
@@ -97,6 +97,17 @@ def _put(key, val):
 
 def build(resume: str, role: str, jd: str, country: str) -> dict:
     """Core pack: two parallel Nano calls (technical / behavioral+scenario). Coding questions load separately."""
+    if market.is_basic_in(country, resume, role, "auto"):
+        # India, 10th/12th/any graduate: the reviewed question set with sample answers (no AI call, never cached so repeat visits vary)
+        picked = basic_in.pick(10, role, jd)
+        return {
+            "country": "India", "coding_profile": False, "basic": True,
+            "focus": ["Tell me about yourself in English", "Why this job", "Customer handling", "Shifts and attitude", "Basic computer and typing"],
+            "questions": [
+                {"type": q["type"], "question": q["question"], "model_answer": q["ref"], "why_asked": _s(q["tip"], 200) or "Asked in most entry-level interviews in India."}
+                for q in picked
+            ],
+        }
     key = _key("core:", resume, role, jd, country)
     if (hit := _get(key)) is not None:
         return hit
