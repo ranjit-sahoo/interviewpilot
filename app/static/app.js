@@ -182,12 +182,13 @@ let me=null,persistent=false,lastReview=null;
 async function refreshMe(){try{const j=await api('/api/auth/me');me=j.user;persistent=j.persistent;if(me)endGuide()}catch(e){me=null}
   $('acctInfo').textContent=me?`Logged in as ${me.email}`:'Guest mode: everything works without an account. Log in only if you want to save your work.';
   $('acctOpen').classList.toggle('hide',!!me);$('acctHist').classList.toggle('hide',!me);$('acctOut').classList.toggle('hide',!me);$('tabHist').classList.toggle('hide',!me);
-  if(me)$('acctForm').classList.add('hide')}
+  if(me)$('acctForm').classList.add('hide');window.dispatchEvent(new Event('mr:me'))}
 $('acctOpen').onclick=()=>$('acctForm').classList.toggle('hide');
+function acRole(){const r=document.querySelector('input[name=acRole]:checked');return r?r.value:'candidate'}
 async function authGo(path,agree){$('acErr').textContent='';
   if(!EMAIL_RE.test($('acEmail').value.trim())){$('acErr').textContent='Please enter a valid email address.';return}
   if(path.endsWith('register')&&$('acPw').value.length<8){$('acErr').textContent='Password must be at least 8 characters.';return}
-  try{await post(path,agree?{email:$('acEmail').value.trim(),password:$('acPw').value,agree:true,website:$('acHp').value}:{email:$('acEmail').value,password:$('acPw').value});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
+  try{await post(path,agree?{email:$('acEmail').value.trim(),password:$('acPw').value,agree:true,website:$('acHp').value,role:acRole(),invite:acRole()==='recruiter'?$('acInv').value.trim():''}:{email:$('acEmail').value,password:$('acPw').value,role:acRole()});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
 $('acLogin').onclick=()=>busy($('acLogin'),'...',()=>authGo('/api/auth/login'));
 $('acReg').onclick=()=>{if(!$('acAgree').checked){$('acErr').textContent='Please tick the box to agree to the Terms of Use and Privacy Policy before creating an account.';$('acAgree').focus();return}busy($('acReg'),'...',()=>authGo('/api/auth/register',true))};
 ['acEmail','acPw'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('acLogin').click()}}));
@@ -532,6 +533,7 @@ $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textCon
     if(v==='account')$('acctForm').classList.remove('hide');
     if(push!==false){try{history.pushState({v},'','#'+v)}catch(e){}}
     window.scrollTo({top:0,behavior:'instant'in window?'instant':'auto'})}
+  window.__mr={TITLES,setView};window.dispatchEvent(new Event('mr:ready'));
   mb.onclick=()=>openMenu(true);$('menuClose').onclick=()=>openMenu(false);scrim.onclick=()=>openMenu(false);
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!drawer.classList.contains('hide'))openMenu(false)});
   document.body.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-v]');if(!b)return;
