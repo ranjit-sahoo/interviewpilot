@@ -540,6 +540,11 @@ $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textCon
   $('acctOpen').onclick=()=>$('acctForm').classList.toggle('hide');
   const syncHist=()=>$('dHist').classList.toggle('hide',$('tabHist').classList.contains('hide'));
   new MutationObserver(syncHist).observe($('tabHist'),{attributes:true,attributeFilter:['class']});syncHist();
+  const syncAcct=()=>{const on=!$('acctOut').classList.contains('hide');$('dOut').classList.toggle('hide',!on);$('dDel').classList.toggle('hide',!on);$('dLogin').classList.toggle('hide',on)};
+  new MutationObserver(syncAcct).observe($('acctOut'),{attributes:true,attributeFilter:['class']});syncAcct();
+  $('dOut').onclick=async()=>{openMenu(false);try{await post('/api/auth/logout',{})}catch(e){}await refreshMe();setView('home')};
+  $('dDel').onclick=async()=>{openMenu(false);if(!confirm('Delete your account? Your saved work, scores and login will be permanently removed. If you ever have a paid plan, it will be cancelled too. This cannot be undone.'))return;
+    try{await api('/api/auth/account',{method:'DELETE'});await refreshMe();setView('home');alert('Your account and data have been deleted.')}catch(e){alert(e.message)}};
   $('sampleTry').addEventListener('click',()=>setView('prep'));
   $('mVoice').addEventListener('click',()=>{if(!prefs.accent){const c=document.querySelector('#countries .on');if(c&&c.dataset.c==='India')prefs.accent='en-IN'}},true);
   const start=(location.hash||'').slice(1);setView(TITLES[start]?start:'home',false);try{history.replaceState({v:document.body.dataset.view},'','#'+document.body.dataset.view)}catch(e){}
