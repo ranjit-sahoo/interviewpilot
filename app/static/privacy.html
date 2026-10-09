@@ -7,13 +7,15 @@ h1{font-size:28px;margin:0 0 4px}h2{font-size:19px;margin:30px 0 6px}p,li{color:
 a{color:#2f56d4}a:focus-visible{outline:3px solid #2f56d4;outline-offset:2px}.foot{border-top:1px solid #e3e6f2;margin-top:40px;padding-top:14px;color:#5a6285;font-size:13px}</style></head>
 <body><main>
 <h1>Privacy Policy</h1>
-<p class="n">MockRep &middot; Last updated: October 5, 2026</p>
+<p class="n">MockRep &middot; Last updated: October 10, 2026</p>
 <p>MockRep is a free AI mock-interview and interview-prep tool. This page explains in plain language what data it handles. It describes what the app actually does today. If that changes, this page changes too.</p>
 
 <h2>1. What we collect</h2>
 <ul>
 <li><b>If you just use the site (no account):</b> the text you paste or upload (resume, job description, interview answers, salary details) is used to produce your result. Interview and negotiation sessions are kept on our server for up to 2 days so a session can continue, then deleted. We do not keep guest resumes or answers beyond that.</li>
-<li><b>If you create an account:</b> your email address and a password (stored only as a salted one-way scrypt hash, never in readable form). We also keep what you choose to save to your history (for example a STAR answer, prep pack or review) and your per-skill interview scores over time (scores only, never your answers or resume).</li>
+<li><b>If you create an account:</b> your email address and a password (stored only as a salted one-way scrypt hash, never in readable form). We also keep what you choose to save to your history (for example a STAR answer, prep pack or review) and your per-skill interview scores over time (scores only, never your answers or resume). Recruiter screening answers are a separate case, see 2A.</li>
+<li><b>If you are a recruiter or employer:</b> your email, the company name, colour and small logo you set, the campaigns you create, the candidates and phone numbers you add or invite, your pipeline notes, your team members' emails and roles, and an activity log (who viewed, exported or changed what). Resume text you paste into the Resume Screener is processed to rank it and is not stored; only the results you choose to add to the Pipeline are saved.</li>
+<li><b>If you take a recruiter's screening (candidate screening link):</b> your name and phone number (or the ones the recruiter entered), the written text of your spoken answers and follow-up answers, timing details (how long you took, pauses, how many times you left the page), your typing, reading, quiz and aptitude results, and the scores and notes calculated from them. See section 2A.</li>
 <li><b>If you join the Pro waitlist:</b> your email address, the date, and where you signed up. It is used only to tell you when a paid plan is available.</li>
 <li><b>Share cards:</b> if you choose to create a share card, it contains your score, role, country and the display name you type, plus a date. It never contains your resume. Anyone with the card link can see it.</li>
 <li><b>Usage counts:</b> see section 4.</li>
@@ -29,9 +31,20 @@ a{color:#2f56d4}a:focus-visible{outline:3px solid #2f56d4;outline-offset:2px}.fo
 </ul>
 <p>We do not sell your data, show ads, or use your resume or answers to train models.</p>
 
+<h2>2A. Recruiter screening: who sees what</h2>
+<ul>
+<li><b>Voice answers.</b> Your browser turns your speech into text. We receive and store only that text, never audio. The browser's speech feature may send your audio to its own provider (for example Google for Chrome) under that provider's policy; see section 3. Speech-to-text can make mistakes with accents or noise, and we do not judge accent or pronunciation.</li>
+<li><b>Scores.</b> Scores and "signals" (such as leaving the page, similar answers, very fast answers) are produced by simple rules, not by AI, and are only hints to help a recruiter. They are not proof of anything. There is no camera, no face recognition and no identity check.</li>
+<li><b>Who can see your screening data.</b> The recruiter's company: the owner and recruiter team members can view and export it (screen, print, CSV, and an API using the company's API key); viewer members can view it. MockRep staff do not look at it except to run the service or fix a problem. The recruiter is responsible for how they use it in their hiring. MockRep provides the tool; the recruiter decides who to invite and what to do with the results.</li>
+<li><b>How long it is kept.</b> The recruiter chooses 7 to 90 days (default 30), shown on your consent screen. After that it is deleted automatically (the check runs whenever the service is used, so deletion can take a little longer on a quiet day). The recruiter can also delete a campaign and all its results at any time.</li>
+<li><b>Your control.</b> You can delete your own screening data yourself on the last screen after you finish, using your link. You can also email us. You can take a screening only once.</li>
+<li><b>Copies.</b> If a recruiter downloads a CSV or prints results, or adds you to their pipeline, they hold that copy themselves. Deleting data in MockRep does not delete copies they already made, so please also ask the recruiter.</li>
+</ul>
+
 <h2>3. Who else handles your data</h2>
 <ul>
 <li><b>Nebius Token Factory (AI processing):</b> the text you submit (resume, job description, answers) is sent to Nebius, which runs NVIDIA Nemotron models, to produce your result. Our Nebius account has Zero Data Retention turned on, which means Nebius is set not to keep prompts or outputs after the response.</li>
+<li><b>Recruiters:</b> see section 2A. We do not send screening answers to the AI provider; screening scores are calculated by our own rules.</li>
 <li><b>Render (hosting), Cloudflare (network and security) and Neon (database):</b> they host the app and its data and may log technical request data such as IP address as part of running their service.</li>
 <li><b>Your browser's speech feature:</b> if you use the voice mode, speech recognition is done by your browser (for example Chrome or Safari), which may send audio to its provider under that provider's own policy. We never receive or store your audio.</li>
 </ul>
@@ -43,6 +56,8 @@ a{color:#2f56d4}a:focus-visible{outline:3px solid #2f56d4;outline-offset:2px}.fo
 <h2>5. How long we keep data and how to delete it</h2>
 <ul>
 <li>Guest sessions: up to 2 days.</li>
+<li>Recruiter screening answers and scores: 7 to 90 days after the candidate finishes, as chosen by the recruiter (shown on the consent screen), or sooner if the candidate or recruiter deletes them.</li>
+<li>Recruiter company data (campaigns, pipeline, team, activity log): until the owner deletes the account or the campaign or pipeline entry. Deleting an owner account removes the company data and its campaigns and screening results; team members then keep plain candidate accounts.</li>
 <li>Account data and saved history: until you delete it. Logged-in users can remove individual saved items, or choose <b>Delete account</b>, which removes your account, saved history, progress scores and login sessions.</li>
 <li>Waitlist email: until the paid plan is announced or you ask us to remove it (email us below).</li>
 <li>Usage counts: daily totals with no personal information.</li>
