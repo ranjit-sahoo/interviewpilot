@@ -95,3 +95,10 @@ ALIASES = {
     "Banking Operations": ["banking", "bank ", "kyc", "loan", "branch operations", "credit analyst", "fintech operations", "bfsi"],
     "Accountant (Tally)": ["accountant", "tally", "accounts executive", "bookkeep", "gst", "finance executive", "accounts payable", "accounts receivable"],
 }
+
+
+# Basic-level roles (BPO / Call Centre, Cabin Crew, Hotel, Airport, Data Entry) come from the reviewed set in basic_in.
+from app import basic_in as _basic  # noqa: E402
+
+ROLES.update(_basic.bank_roles())
+ALIASES.update(_basic.ALIASES)
