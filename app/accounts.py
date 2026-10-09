@@ -52,7 +52,11 @@ class Conn:
             self.c = sqlite3.connect(SQLITE_PATH, timeout=15)
             self.c.row_factory = sqlite3.Row
             for stmt in _schema():
-                self.c.execute(stmt)
+                try:
+                    self.c.execute(stmt)
+                except sqlite3.OperationalError:
+                    if not stmt.startswith("ALTER"):
+                        raise
             self.pg = False
 
     def run(self, sql, params=()):
@@ -91,6 +95,19 @@ def _schema():
         "CREATE TABLE IF NOT EXISTS progress (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, created " + _REAL + " NOT NULL, role TEXT NOT NULL, overall " + _REAL + ", scores TEXT NOT NULL)",
         "CREATE INDEX IF NOT EXISTS progress_user ON progress (user_id, created)",
         "CREATE TABLE IF NOT EXISTS waitlist (email TEXT PRIMARY KEY, created " + _REAL + " NOT NULL, source TEXT NOT NULL)",
+        "ALTER TABLE users ADD COLUMN " + ("IF NOT EXISTS " if using_postgres() else "") + "role TEXT NOT NULL DEFAULT 'candidate'",
+        "ALTER TABLE users ADD COLUMN " + ("IF NOT EXISTS " if using_postgres() else "") + "plan TEXT NOT NULL DEFAULT 'free'",
+        "ALTER TABLE users ADD COLUMN " + ("IF NOT EXISTS " if using_postgres() else "") + "org_id TEXT",
+        "ALTER TABLE users ADD COLUMN " + ("IF NOT EXISTS " if using_postgres() else "") + "org_role TEXT",
+        "CREATE TABLE IF NOT EXISTS orgs (id TEXT PRIMARY KEY, name TEXT NOT NULL, brand_color TEXT NOT NULL, logo TEXT NOT NULL, api_key_hash TEXT, invite_code TEXT, viewer_code TEXT, created " + _REAL + " NOT NULL)",
+        "CREATE TABLE IF NOT EXISTS campaigns (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, created_by TEXT NOT NULL, name TEXT NOT NULL, role_title TEXT NOT NULL, pool TEXT NOT NULL, modules TEXT NOT NULL, n_questions INTEGER NOT NULL, secs INTEGER NOT NULL, expires " + _REAL + " NOT NULL, status TEXT NOT NULL, lang TEXT NOT NULL, retention_days INTEGER NOT NULL, open_link INTEGER NOT NULL, created " + _REAL + " NOT NULL)",
+        "CREATE INDEX IF NOT EXISTS campaigns_org ON campaigns (org_id, created)",
+        "CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, campaign_id TEXT NOT NULL, token TEXT UNIQUE NOT NULL, name TEXT NOT NULL, phone TEXT NOT NULL, status TEXT NOT NULL, started " + _REAL + ", finished " + _REAL + ", data TEXT NOT NULL, score " + _REAL + ", consent_at " + _REAL + ", delete_after " + _REAL + ", created " + _REAL + " NOT NULL)",
+        "CREATE INDEX IF NOT EXISTS attempts_campaign ON attempts (campaign_id)",
+        "CREATE TABLE IF NOT EXISTS pipeline (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, name TEXT NOT NULL, phone TEXT NOT NULL, email TEXT NOT NULL, role_title TEXT NOT NULL, stage TEXT NOT NULL, notes TEXT NOT NULL, score " + _REAL + ", source TEXT NOT NULL, created " + _REAL + " NOT NULL, updated " + _REAL + " NOT NULL)",
+        "CREATE INDEX IF NOT EXISTS pipeline_org ON pipeline (org_id, updated)",
+        "CREATE TABLE IF NOT EXISTS audit (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, user_email TEXT NOT NULL, action TEXT NOT NULL, target TEXT NOT NULL, ts " + _REAL + " NOT NULL)",
+        "CREATE INDEX IF NOT EXISTS audit_org ON audit (org_id, ts)",
     ]
 
 
@@ -154,32 +171,61 @@ def _new_session(c: Conn, user_id: str) -> str:
 _EXISTS = "We could not create this account. If you already signed up, try logging in instead."
 
 
-def register(email: str, password: str):
+ROLES = ("candidate", "recruiter")
+
+
+def _invite(c: Conn, code: str):
+    code = (code or "").strip()
+    if not code:
+        return None
+    r = c.run("SELECT id, invite_code, viewer_code FROM orgs WHERE invite_code=? OR viewer_code=?", (code, code))
+    if not r:
+        raise ValueError("That company invite code is not valid.")
+    return r[0]["id"], ("viewer" if r[0]["viewer_code"] == code else "recruiter")
+
+
+def register(email: str, password: str, role: str = "candidate", invite: str = ""):
     email = _clean_email(email)
     if len(password or "") < 8 or len(password) > 200:
         raise ValueError("Password must be 8 to 200 characters.")
+    role = role if role in ROLES else "candidate"
     uid = uuid.uuid4().hex
     pw = hash_password(password)
     with Conn() as c:
         if c.run("SELECT id FROM users WHERE email=?", (email,)):
             raise ValueError(_EXISTS)
+        org_id = org_role = None
+        if role == "recruiter":
+            inv = _invite(c, invite)
+            if inv:
+                org_id, org_role = inv
+            else:
+                org_id, org_role = uid, "owner"
+        elif (invite or "").strip():
+            raise ValueError("Company invite codes are only for recruiter accounts.")
         try:
-            c.run("INSERT INTO users (id, email, pw_hash, created) VALUES (?, ?, ?, ?)", (uid, email, pw, time.time()))
+            c.run("INSERT INTO users (id, email, pw_hash, created, role, plan, org_id, org_role) VALUES (?, ?, ?, ?, ?, 'free', ?, ?)",
+                  (uid, email, pw, time.time(), role, org_id, org_role))
         except Exception:  # unique race
             raise ValueError(_EXISTS)
-        return {"id": uid, "email": email}, _new_session(c, uid)
+        if org_role == "owner":
+            c.run("INSERT INTO orgs (id, name, brand_color, logo, api_key_hash, invite_code, viewer_code, created) VALUES (?, '', '#5b8cff', '', NULL, ?, ?, ?)",
+                  (uid, "R" + uuid.uuid4().hex[:10], "V" + uuid.uuid4().hex[:10], time.time()))
+        return {"id": uid, "email": email, "role": role}, _new_session(c, uid)
 
 
-def login(email: str, password: str):
+def login(email: str, password: str, role: str | None = None):
     email = (email or "").strip().lower()
     with Conn() as c:
-        rows = c.run("SELECT id, pw_hash FROM users WHERE email=?", (email,))
+        rows = c.run("SELECT id, pw_hash, role FROM users WHERE email=?", (email,))
         ok = verify_password(password or "", rows[0]["pw_hash"] if rows else _DUMMY)
         if not rows or not ok:
             raise PermissionError("Wrong email or password.")
+        if role in ROLES and rows[0]["role"] != role:
+            raise PermissionError("This email is registered as a %s account. Choose '%s' to log in, or use a different email for a %s account." % (rows[0]["role"], rows[0]["role"].title(), role))
         if needs_rehash(rows[0]["pw_hash"]):
             c.run("UPDATE users SET pw_hash=? WHERE id=?", (hash_password(password), rows[0]["id"]))
-        return {"id": rows[0]["id"], "email": email}, _new_session(c, rows[0]["id"])
+        return {"id": rows[0]["id"], "email": email, "role": rows[0]["role"]}, _new_session(c, rows[0]["id"])
 
 
 def user_for(token: str | None):
@@ -187,7 +233,7 @@ def user_for(token: str | None):
         return None
     with Conn() as c:
         rows = c.run(
-            "SELECT u.id, u.email FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?",
+            "SELECT u.id, u.email, u.role, u.plan, u.org_id, u.org_role FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires>?",
             (_hash_token(token), time.time()),
         )
     return rows[0] if rows else None
@@ -208,6 +254,14 @@ def cancel_subscription(user_id: str) -> None:
 def delete_account(user_id: str):
     cancel_subscription(user_id)
     with Conn() as c:
+        me = c.run("SELECT org_id, org_role FROM users WHERE id=?", (user_id,))
+        if me and me[0]["org_role"] == "owner":
+            org = me[0]["org_id"]
+            c.run("DELETE FROM attempts WHERE campaign_id IN (SELECT id FROM campaigns WHERE org_id=?)", (org,))
+            for t in ("campaigns", "pipeline", "audit"):
+                c.run("DELETE FROM %s WHERE org_id=?" % t, (org,))
+            c.run("UPDATE users SET org_id=NULL, org_role=NULL, role='candidate' WHERE org_id=? AND id<>?", (org, user_id))
+            c.run("DELETE FROM orgs WHERE id=?", (org,))
         c.run("DELETE FROM history WHERE user_id=?", (user_id,))
         c.run("DELETE FROM progress WHERE user_id=?", (user_id,))
         c.run("DELETE FROM auth_sessions WHERE user_id=?", (user_id,))
