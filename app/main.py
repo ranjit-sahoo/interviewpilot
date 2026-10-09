@@ -58,6 +58,8 @@ def _set_cookie(resp, request: Request, token: str):
 async def security_headers(request: Request, call_next):
     resp = await call_next(request)
     h = resp.headers
+    if request.url.path.startswith("/static/") and resp.status_code == 200:
+        h.setdefault("Cache-Control", "public, max-age=300")
     h.setdefault("X-Content-Type-Options", "nosniff")
     h.setdefault("X-Frame-Options", "DENY")
     h.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
