@@ -513,3 +513,33 @@ $('btnPrep').addEventListener('click',()=>{if(document.body.classList.contains('
 // ---- waitlist
 $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textContent='';
   try{const j=await post('/api/waitlist',{email:$('wlEmail').value});$('wlMsg').textContent=j.new?'You are on the list. Thank you!':'You are already on the list. Thank you!';$('wlEmail').value=''}catch(e){$('wlMsg').textContent=e.message}});
+
+// ---- simple menu / one view at a time
+(function(){
+  document.body.classList.remove('guided');
+  const TITLES={home:'Home',interview:'Mock Interview',prep:'Interview Prep',review:'Resume Review',match:'Job Match',nego:'Salary Negotiation',star:'STAR Answer Builder',brief:'Company Brief',bank:'Question Bank',code:'Coding Practice',builder:'Resume Builder',recruiter:'Recruiter Mode',history:'My History',account:'Log in / Sign up'};
+  const drawer=$('drawer'),scrim=$('scrim'),mb=$('menuBtn');
+  function openMenu(on){drawer.classList.toggle('hide',!on);scrim.classList.toggle('hide',!on);mb.setAttribute('aria-expanded',on?'true':'false');document.body.style.overflow=on?'hidden':'';if(on){const f=drawer.querySelector('button.on')||drawer.querySelector('button[data-v]');setTimeout(()=>f&&f.focus&&f.focus(),30)}else mb.focus&&mb.focus({preventScroll:true})}
+  function setView(v,push){
+    if(!TITLES[v])v='home';
+    document.body.dataset.view=v;$('viewTitle').textContent=v==='home'?'':TITLES[v];
+    drawer.querySelectorAll('button[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+    if(v!=='home'&&v!=='account'){const tb=document.querySelector('#tabs [data-t='+v+']');if(tb&&!tb.classList.contains('on'))tb.click()}
+    if(v==='account')$('acctForm').classList.remove('hide');
+    if(push!==false){try{history.pushState({v},'','#'+v)}catch(e){}}
+    window.scrollTo({top:0,behavior:'instant'in window?'instant':'auto'})}
+  mb.onclick=()=>openMenu(true);$('menuClose').onclick=()=>openMenu(false);scrim.onclick=()=>openMenu(false);
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!drawer.classList.contains('hide'))openMenu(false)});
+  document.body.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-v]');if(!b)return;
+    if(b.dataset.v==='menu'){openMenu(true);return}
+    openMenu(false);setView(b.dataset.v)});
+  // any code that switches a tab (e.g. the "practise this" buttons) also switches the view
+  $('tabs').addEventListener('click',e=>{const t=e.target.dataset&&e.target.dataset.t;if(t&&document.body.dataset.view!==t){document.body.dataset.view=t;$('viewTitle').textContent=TITLES[t]||'';drawer.querySelectorAll('button[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===t));try{history.pushState({v:t},'','#'+t)}catch(x){}}});
+  addEventListener('popstate',e=>{openMenu(false);setView((e.state&&e.state.v)||(location.hash||'').slice(1)||'home',false)});
+  // account entry points
+  $('acctOpen').onclick=()=>$('acctForm').classList.toggle('hide');
+  const syncHist=()=>$('dHist').classList.toggle('hide',$('tabHist').classList.contains('hide'));
+  new MutationObserver(syncHist).observe($('tabHist'),{attributes:true,attributeFilter:['class']});syncHist();
+  $('sampleTry').addEventListener('click',()=>setView('prep'));
+  const start=(location.hash||'').slice(1);setView(TITLES[start]?start:'home',false);try{history.replaceState({v:document.body.dataset.view},'','#'+document.body.dataset.view)}catch(e){}
+})();
