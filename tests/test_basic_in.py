@@ -114,3 +114,29 @@ def test_no_personal_details_left():
     blob = " ".join(o["q"] + o["ref"] + o["tip"] for o in DATA).lower()
     for bad in ("kankinara", "hostel", "republic day", "2012", " java "):
         assert bad not in blob
+
+
+def test_scoring_prompt_has_reference_and_basic_context(monkeypatch):
+    from app import llm
+
+    calls = []
+    real = llm.chat_json
+
+    def spy(task, system, user, **kw):
+        calls.append((task, system, user))
+        return real(task, system, user, **kw)
+
+    monkeypatch.setattr(llm, "chat_json", spy)
+    r = c.post("/api/session", json={"resume": R12, "role": "Hotel Front Desk", "jd": "", "country": "India", "level": "auto", "followups": False, "count": 5}, headers=IN)
+    sid = r.json()["session_id"]
+    c.post(f"/api/session/{sid}/answer", json={"answer": "My name is Sunita and I want to work in hotels."}, headers=IN)
+    turn = [x for x in calls if x[0] == "turn"][-1]
+    assert "entry level" in turn[1] and "no coding" in turn[1].lower()
+    assert "REFERENCE" in turn[2] and "[your name]" in turn[2]
+    assert not [x for x in calls if x[0] == "questions"]  # no AI question generation for the basic set
+    # US flow does not get the basic context
+    r = c.post("/api/session", json={"resume": R12, "role": "Hotel Front Desk", "jd": "", "country": "US", "level": "auto", "followups": False, "count": 5}, headers=US)
+    sid = r.json()["session_id"]
+    c.post(f"/api/session/{sid}/answer", json={"answer": "I want to work in hotels."}, headers=US)
+    turn = [x for x in calls if x[0] == "turn"][-1]
+    assert "entry level" not in turn[1] and "REFERENCE" not in turn[2]
