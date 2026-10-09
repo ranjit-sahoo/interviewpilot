@@ -185,7 +185,9 @@ async function refreshMe(){try{const j=await api('/api/auth/me');me=j.user;persi
   if(me)$('acctForm').classList.add('hide')}
 $('acctOpen').onclick=()=>$('acctForm').classList.toggle('hide');
 async function authGo(path,agree){$('acErr').textContent='';
-  try{await post(path,agree?{email:$('acEmail').value,password:$('acPw').value,agree:true}:{email:$('acEmail').value,password:$('acPw').value});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
+  if(!EMAIL_RE.test($('acEmail').value.trim())){$('acErr').textContent='Please enter a valid email address.';return}
+  if(path.endsWith('register')&&$('acPw').value.length<8){$('acErr').textContent='Password must be at least 8 characters.';return}
+  try{await post(path,agree?{email:$('acEmail').value.trim(),password:$('acPw').value,agree:true,website:$('acHp').value}:{email:$('acEmail').value,password:$('acPw').value});$('acPw').value='';await refreshMe()}catch(e){$('acErr').textContent=e.message}}
 $('acLogin').onclick=()=>busy($('acLogin'),'...',()=>authGo('/api/auth/login'));
 $('acReg').onclick=()=>{if(!$('acAgree').checked){$('acErr').textContent='Please tick the box to agree to the Terms of Use and Privacy Policy before creating an account.';$('acAgree').focus();return}busy($('acReg'),'...',()=>authGo('/api/auth/register',true))};
 ['acEmail','acPw'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('acLogin').click()}}));
@@ -511,8 +513,10 @@ $('guideSkip').onclick=()=>{endGuide();$('tabs').scrollIntoView({behavior:'smoot
 $('btnPrep').addEventListener('click',()=>{if(document.body.classList.contains('guided')){const iv=setInterval(()=>{if(!$('btnPrep').disabled){clearInterval(iv);if($('prepOut').innerHTML.trim()){endGuide();$('prepOut').scrollIntoView({behavior:'smooth'})}}},400);setTimeout(()=>clearInterval(iv),90000)}});
 
 // ---- waitlist
+const EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textContent='';
-  try{const j=await post('/api/waitlist',{email:$('wlEmail').value});$('wlMsg').textContent=j.new?'You are on the list. Thank you!':'You are already on the list. Thank you!';$('wlEmail').value=''}catch(e){$('wlMsg').textContent=e.message}});
+  if(!EMAIL_RE.test($('wlEmail').value.trim())){$('wlMsg').textContent='Please enter a valid email address.';return}
+  try{const j=await post('/api/waitlist',{email:$('wlEmail').value.trim(),website:$('wlHp').value});$('wlMsg').textContent=j.new?'You are on the list. Thank you!':'You are already on the list. Thank you!';$('wlEmail').value=''}catch(e){$('wlMsg').textContent=e.message}});
 
 // ---- simple menu / one view at a time
 (function(){
@@ -546,6 +550,9 @@ $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textCon
   $('dDel').onclick=async()=>{openMenu(false);if(!confirm('Delete your account? Your saved work, scores and login will be permanently removed. If you ever have a paid plan, it will be cancelled too. This cannot be undone.'))return;
     try{await api('/api/auth/account',{method:'DELETE'});await refreshMe();setView('home');alert('Your account and data have been deleted.')}catch(e){alert(e.message)}};
   $('sampleTry').addEventListener('click',()=>setView('prep'));
+  $('heroCta').addEventListener('click',()=>setView('interview'));
+  try{if(!localStorage.getItem('mr_cookie_ok'))$('cookieBar').classList.remove('hide')}catch(e){}
+  $('cookieOk').onclick=()=>{$('cookieBar').classList.add('hide');try{localStorage.setItem('mr_cookie_ok','1')}catch(e){}};
   $('mVoice').addEventListener('click',()=>{if(!prefs.accent){const c=document.querySelector('#countries .on');if(c&&c.dataset.c==='India')prefs.accent='en-IN'}},true);
   const start=(location.hash||'').slice(1);setView(TITLES[start]?start:'home',false);try{history.replaceState({v:document.body.dataset.view},'','#'+document.body.dataset.view)}catch(e){}
 })();
