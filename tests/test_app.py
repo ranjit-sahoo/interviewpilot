@@ -351,7 +351,7 @@ def test_us_market_roles_and_matching():
 def test_india_market_roles():
     from app import bank
     rs = bank.roles()
-    assert len(rs) == 28 and "Data Entry / MIS Executive" not in rs and "Customer Support (BPO)" not in rs
+    assert len(rs) == 33 and "Data Entry / MIS Executive" not in rs and "Customer Support (BPO)" not in rs
     for r in ["Sales / Business Development Executive", "Accountant (Tally)", "Banking Operations", "UI/UX Designer"]:
         assert r in rs
         assert len([q for q in bank.curated(r)["questions"]]) >= 15
