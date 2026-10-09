@@ -306,12 +306,25 @@ function speak(text,onend,force){if(!(voice||force)||!TTS){onend&&onend();return
     u.onend=()=>{i++;tries=0;next()};
     u.onerror=ev=>{if(ev&&(ev.error==='canceled'||ev.error==='interrupted'))return;if(tries++<1&&list.length>1){vi=(vi+1)%list.length;next()}else fin()};
     TTS.speak(u)};next()}
-function startMic(){if(!SR||listening)return;rec=new SR();rec.lang=prefs.accent||'en-US';rec.continuous=true;rec.interimResults=true;baseText=$('ans').value.trim();
-  rec.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript;$('ans').value=(baseText?baseText+' ':'')+t.trim()};
-  rec.onerror=e=>{listening=false;$('btnMic').textContent='Start speaking';$('micState').textContent=e.error==='not-allowed'?'Microphone blocked. Allow it in the browser address bar, or switch to Type.':e.error==='no-speech'?'No speech heard. Try again.':'Mic problem ('+e.error+'). You can type instead.'};
-  rec.onend=()=>{if(speakStart){speakMs+=Date.now()-speakStart;speakStart=0}recPause();listening=false;$('btnMic').textContent='Start speaking';if(!$('micState').textContent.startsWith('Mic')&&!$('micState').textContent.includes('blocked'))$('micState').innerHTML='Review or edit your answer, then submit.'};
-  try{rec.start();listening=true;speakStart=Date.now();if(voice)recStart();$('btnMic').textContent='Stop';$('micState').innerHTML='<span class="live">Listening...</span> speak your answer';}catch(e){$('micState').textContent='Could not start the microphone.'}}
-function stopMic(){if(rec&&listening){try{rec.stop()}catch(e){}}listening=false}
+const ANDROID=/Android/i.test(navigator.userAgent||'');
+let wantMic=false,micFinal='',micRetries=0,micGot=false;
+const micMsg=e=>e==='not-allowed'||e==='service-not-allowed'?'Microphone is blocked. Tap the lock icon in the address bar, allow Microphone, then try again. Or switch to Type.':e==='no-speech'?'I did not hear anything. Tap Start speaking, wait for Listening, then speak a little louder, close to the phone.':e==='audio-capture'?'The microphone is busy or not found. Close other apps that use the mic (calls, recorders) and try again.':e==='network'?'Voice needs internet. Check your connection and try again.':'Mic problem ('+e+'). You can type instead.';
+function micSet(html){$('micState').innerHTML=html}
+function startMic(){if(!SR||listening)return;wantMic=true;micFinal='';micRetries=0;micGot=false;baseText=$('ans').value.trim();if(voice&&!ANDROID)recStart();beginRec()}
+function beginRec(){
+  rec=new SR();rec.lang=prefs.accent||'en-US';rec.continuous=!ANDROID;rec.interimResults=true;rec.maxAlternatives=1;
+  let err='';
+  rec.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i],t=r[0].transcript;if(r.isFinal){micFinal+=(micFinal?' ':'')+t.trim()}else interim+=t}
+    micGot=true;micRetries=0;const all=[baseText,micFinal,interim.trim()].filter(Boolean).join(' ');$('ans').value=all};
+  rec.onerror=e=>{err=e.error||'error';if(err==='aborted')return;if(err==='no-speech')return;wantMic=false;listening=false;$('btnMic').textContent='Start speaking';micSet(micMsg(err))};
+  rec.onend=()=>{if(speakStart){speakMs+=Date.now()-speakStart;speakStart=0}
+    if(wantMic&&err!=='not-allowed'&&err!=='service-not-allowed'&&err!=='audio-capture'){ // Android ends after each phrase: keep listening until the user taps Stop
+      if(err==='no-speech'&&!micGot&&++micRetries>=2){wantMic=false;listening=false;$('btnMic').textContent='Start speaking';recPause();micSet(micMsg('no-speech'));return}
+      baseText=$('ans').value.trim();micFinal='';err='';setTimeout(()=>{if(wantMic){try{beginRec()}catch(x){wantMic=false;listening=false;$('btnMic').textContent='Start speaking';micSet('Could not restart the microphone. You can type instead.')}}},ANDROID?250:0);return}
+    recPause();listening=false;$('btnMic').textContent='Start speaking';
+    if(!err||err==='aborted')micSet(micGot||$('ans').value.trim()?'Review or edit your answer, then submit.':micMsg('no-speech'))};
+  try{rec.start();listening=true;if(!speakStart)speakStart=Date.now();$('btnMic').textContent='Stop';micSet('<span class="live">Listening...</span> speak your answer')}catch(e){wantMic=false;listening=false;micSet('Could not start the microphone. Tap Start speaking again, or type.')}}
+function stopMic(){wantMic=false;if(rec&&listening){try{rec.stop()}catch(e){}}listening=false;$('btnMic').textContent='Start speaking'}
 $('btnMic').onclick=()=>listening?stopMic():startMic();
 $('btnSpeak').onclick=()=>speak($('qtext').textContent);
 
@@ -330,7 +343,7 @@ function endRec(discard){const r=mrec;mrec=null;const st=mstream;mstream=null;sp
 async function recStart(){if(!window.MediaRecorder||!navigator.mediaDevices)return;try{if(!mrec){mstream=await navigator.mediaDevices.getUserMedia({audio:true});mchunks=[];mrec=new MediaRecorder(mstream);mrec.ondataavailable=e=>{if(e.data&&e.data.size)mchunks.push(e.data)};mrec.start()}else if(mrec.state==='paused')mrec.resume()}catch(e){mrec=null}}
 function recPause(){try{if(mrec&&mrec.state==='recording')mrec.pause()}catch(e){}}
 function showQ(q,n,t,fu){curFu=!!fu;endRec(true);if(!fu||true)startTimer();retryMode=false;$('btnAns').textContent='Submit answer';if(!voice)$('fb').innerHTML='';$('qnum').textContent=fu?`Question ${n} of ${t} - follow-up ${fu.n}`:`Question ${n} of ${t}`;$('qtype').textContent=fu?'follow-up':q.type;$('qtext').textContent=q.question;$('ans').value='';$('btnAns').disabled=false;$('micState').textContent='';
-  $('interview').scrollIntoView({behavior:'smooth',block:'start'});speak(q.question,()=>{if(voice&&!listening)startMic()})}
+  $('interview').scrollIntoView({behavior:'smooth',block:'start'});speak(q.question,()=>{if(voice&&!listening)setTimeout(()=>{if(voice&&!listening)startMic()},ANDROID?500:0)})}
 let curFu=false,wasFu=false,lastText='',retryMode=false,retryInfo={left:3};
 function fbHtml(d,f){const s=f.scores||{},cm=f.communication||{},m=cm.metrics||{};const fl=Object.entries(m.fillers||{}).map(([k,v])=>`"${esc(k)}" x${v}`).join(', ');
   return `<h3>Feedback</h3><div class="bars">${['clarity','depth','correctness','star'].map(k=>`<div class="bar"><b>${esc(s[k])}/5</b>${k==='star'?'STAR':k}</div>`).join('')}</div>
