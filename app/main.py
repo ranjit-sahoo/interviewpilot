@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import time
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
@@ -15,6 +16,9 @@ app = FastAPI(title="MockRep", docs_url=None, redoc_url=None, openapi_url=None)
 from app import analytics as _analytics  # noqa: E402
 
 _analytics.install(app)
+from app import hub as _hub  # noqa: E402
+
+app.include_router(_hub.router)
 
 # A future mobile shell or separate web front end can call the API cross-origin.
 # Set CORS_ORIGINS="https://app.example.com,capacitor://localhost" to enable; off by default.
@@ -53,6 +57,35 @@ def need_user(request: Request):
 def _set_cookie(resp, request: Request, token: str):
     secure = request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
     resp.set_cookie(COOKIE, token, max_age=accounts.SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=secure, path="/")
+
+
+_CANDIDATE_API = ("/api/session", "/api/negotiation", "/api/resume", "/api/match", "/api/bank", "/api/builder", "/api/prep", "/api/star", "/api/company-brief", "/api/coding")
+_role_cache: dict = {}
+
+
+def _role_for(token: str):
+    hit = _role_cache.get(token)
+    if hit and time.time() - hit[1] < 30:
+        return hit[0]
+    u = accounts.user_for(token)
+    if len(_role_cache) > 2000:
+        _role_cache.clear()
+    _role_cache[token] = (u.get("role") if u else None, time.time())
+    return _role_cache[token][0]
+
+
+@app.middleware("http")
+async def role_gate(request: Request, call_next):
+    """Recruiter accounts get the recruiter tools only; candidate accounts and guests get the candidate tools only."""
+    path = request.url.path
+    if path.startswith("/api/") and request.method != "GET" or path.startswith("/api/recruiter"):
+        tok = request.cookies.get(COOKIE)
+        role = _role_for(tok) if tok else None
+        if path.startswith("/api/recruiter") and role != "recruiter":
+            return JSONResponse({"detail": "Recruiter Mode needs a recruiter account. Create one (free) from the menu."}, status_code=403)
+        if role == "recruiter" and path.startswith(_CANDIDATE_API):
+            return JSONResponse({"detail": "This is a candidate tool. Recruiter accounts use the recruiter tools. For candidate tools, use a separate candidate account."}, status_code=403)
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -533,6 +566,8 @@ class AuthIn(BaseModel):
     password: str = Field(max_length=200)
     agree: bool | None = None
     website: str | None = Field(None, max_length=200)  # honeypot: real users never fill this
+    role: str | None = Field(None, max_length=20)  # candidate or recruiter, chosen at sign-up and checked at login
+    invite: str | None = Field(None, max_length=40)  # recruiter company invite code (optional)
 
 
 class SaveIn(BaseModel):
@@ -550,10 +585,10 @@ def auth_register(body: AuthIn, request: Request):
     if body.agree is False:
         raise HTTPException(400, "Please agree to the Terms and Privacy Policy to create an account.")
     try:
-        user, token = accounts.register(body.email, body.password)
+        user, token = accounts.register(body.email, body.password, body.role or "candidate", body.invite or "")
     except ValueError as e:
         raise HTTPException(400, str(e))
-    resp = JSONResponse({"user": {"email": user["email"]}})
+    resp = JSONResponse({"user": {"email": user["email"], "role": user.get("role", "candidate")}})
     _set_cookie(resp, request, token)
     return resp
 
@@ -564,11 +599,11 @@ def auth_login(body: AuthIn, request: Request):
     if _fail_limiter.blocked(ek):
         raise HTTPException(429, "Too many failed attempts for this account. Please wait 30 minutes.")
     try:
-        user, token = accounts.login(body.email, body.password)
+        user, token = accounts.login(body.email, body.password, body.role)
     except PermissionError as e:
         _fail_limiter.fail(ek)
         raise HTTPException(401, str(e))
-    resp = JSONResponse({"user": {"email": user["email"]}})
+    resp = JSONResponse({"user": {"email": user["email"], "role": user.get("role", "candidate")}})
     _set_cookie(resp, request, token)
     return resp
 
@@ -584,7 +619,8 @@ def auth_logout(request: Request):
 @app.get("/api/auth/me", dependencies=LIMITED)
 def auth_me(request: Request):
     u = current_user(request)
-    return {"user": {"email": u["email"]} if u else None, "persistent": accounts.using_postgres()}
+    return {"user": {"email": u["email"], "role": u.get("role", "candidate"), "org_role": u.get("org_role"), "plan": u.get("plan", "free")} if u else None,
+            "persistent": accounts.using_postgres()}
 
 
 @app.delete("/api/auth/account", dependencies=LIMITED)
@@ -695,14 +731,14 @@ def favicon():
 
 @app.get("/robots.txt")
 def robots():
-    body = f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /c/\n\nSitemap: {PUBLIC_BASE.rstrip('/')}/sitemap.xml\n"
+    body = f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /c/\nDisallow: /s/\n\nSitemap: {PUBLIC_BASE.rstrip('/')}/sitemap.xml\n"
     return Response(body, media_type="text/plain")
 
 
 @app.get("/sitemap.xml")
 def sitemap():
     base = PUBLIC_BASE.rstrip("/")
-    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/about", "/privacy", "/terms", "/cookies"))
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in ("/", "/about", "/help", "/privacy", "/terms", "/cookies"))
     xml = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n'
     return Response(xml, media_type="application/xml")
 
