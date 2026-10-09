@@ -71,3 +71,40 @@ _TECH = re.compile(
 def looks_technical(role: str, resume: str) -> bool:
     """Cheap check so the coding-question call only runs for technical profiles."""
     return bool(_TECH.search(role or "")) or len(_TECH.findall((resume or "")[:6000])) >= 4
+
+
+# ---------- India basic level (10th / 12th / any graduate, non-engineering) ----------
+BASIC_IN = (
+    "MARKET: India, entry level (10th/12th pass or any graduate, non-professional). Interview style: simple everyday English, "
+    "HR basics, customer handling, shifts and attitude. No coding, no DSA, no system design, no US-client or notice-period assumptions. "
+    "Be encouraging. Judge the candidate's English wording and grammar kindly and give simple corrections."
+)
+
+_HIGHER = re.compile(
+    r"b\.\s?tech|btech|b\.\s?e\b|bachelor of (engineering|technology)|m\.?\s?tech|mtech|\bmca\b|\bmba\b|pgdm|master of|"
+    r"m\.\s?sc|m\.\s?com|post[\s-]?graduat|ph\.?d|engineering",
+    re.I,
+)
+_BASIC_EDU = re.compile(
+    r"\b(10th|12th|xth|xiith|xii|ssc|hsc|matric|intermediate|higher secondary|secondary school|plus two|\+2)\b|"
+    r"class\s?(10|12|x|xii)\b|b\.\s?a\b|bachelor of|b\.\s?com|bcom|b\.\s?sc|bsc|bba|bca|bbm|bhm|b\.\s?voc|graduat|diploma|hons|honou?rs",
+    re.I,
+)
+_COMPUTER_DEGREE = re.compile(r"\bbca\b|b\.\s?sc|bsc|computer", re.I)
+
+
+def is_basic_in(country, resume: str, role: str = "", level: str = "auto") -> bool:
+    """India only. True when the candidate chose Basic, or the resume shows 10th/12th/any graduation (not engineering/PG)
+    and the target role is not a technical one for a computer degree. The US and Other markets always return False."""
+    if normalize(country) != "India":
+        return False
+    if (level or "auto") == "basic":
+        return True
+    if (level or "auto") not in ("auto", "fresher"):
+        return False
+    text = (resume or "")[:6000]
+    if len(text.strip()) < 30 or _HIGHER.search(text) or not _BASIC_EDU.search(text):
+        return False
+    if looks_technical(role, "") and _COMPUTER_DEGREE.search(text):
+        return False
+    return True
