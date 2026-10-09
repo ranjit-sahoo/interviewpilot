@@ -2,6 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MockRep - AI interview prep</title>
 <meta name="description" content="AI interview prep for any job: resume review, JD match, voice mock interviews, salary negotiation practice and recruiter screening.">
+<link rel="canonical" href="https://mockrep.onrender.com/"><meta property="og:type" content="website"><meta property="og:url" content="https://mockrep.onrender.com/"><meta property="og:image" content="https://mockrep.onrender.com/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="MockRep: walk into every interview ready"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="MockRep - AI interview prep"><meta name="twitter:image" content="https://mockrep.onrender.com/og.png">
 <meta name="theme-color" content="#0b1020"><link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="icon" href="/static/icons/icon-192.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="MockRep"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
@@ -121,6 +122,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 #drawer>button[data-v]{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:8px;width:100%;text-align:left;background:transparent;box-shadow:none;color:var(--ink);margin:2px 0;padding:11px 10px;border-radius:12px;font-size:16px;font-weight:600;min-height:48px}
 #drawer>button[data-v] i{font-style:normal;font-size:20px;grid-row:span 2;text-align:center}
 #drawer>button[data-v] small{grid-column:2;color:var(--mute);font-weight:400;font-size:13px;margin-top:-2px}
+.herocta{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:16px 0 4px}.herocta button{margin:0;padding:14px 26px;font-size:17px}#cookieBar{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;display:flex;gap:12px;align-items:center;justify-content:space-between;background:#0d1426;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:620px;margin:0 auto}#cookieBar.hide{display:none}#cookieBar a{color:#9bb8ff}#cookieBar button{margin:0;min-height:40px;padding:8px 18px;flex:none}body:not([data-view=home]) .herocta{display:none}
 #drawer>button[data-act],#drawer>a{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:8px;width:100%;text-align:left;background:transparent;box-shadow:none;color:var(--ink);margin:2px 0;padding:11px 10px;min-height:44px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;border:0;box-sizing:border-box}#drawer>button[data-act] i,#drawer>a i{font-style:normal;font-size:18px;text-align:center}#drawer>button[data-act=del]{color:#ff9b9b}
 #drawer>button[data-v].on{background:linear-gradient(135deg,#3b66e0,#2c52c4)}#drawer>button[data-v].on small{color:#dfe7ff}
 .dgroup{color:var(--mute);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 4px}
@@ -180,6 +182,7 @@ label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#
 <header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
 <div class="sub">Practice your interview with an AI coach. Works for any job: IT, BPO, hotel, airline, banking and more. Built for the US and India.</div><p class="promise">Paste your resume and a job description. In about a minute you get tailored questions, a scored mock interview and a report that tells you what to fix. Free, no login.</p>
+<p class="herocta"><button id="heroCta" type="button">Start a free mock interview</button><span class="note">No login. Takes about a minute to set up.</span></p>
 <ol class="strip" aria-label="How it works"><li><b>1</b><span>Get your prep pack</span></li><li><b>2</b><span>Do a mock interview, typed or spoken</span></li><li><b>3</b><span>Read your report, fix, retry</span></li></ol>
 <div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>Resume-to-job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
 <section id="homeGrid"><h2 style="margin:18px 0 6px">What do you want to do?</h2>
@@ -205,7 +208,7 @@ label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#
   <button id="acctOpen" class="ghost">Log in / Sign up</button><button id="acctHist" class="ghost hide">My history</button><button id="acctOut" class="ghost hide">Log out</button>
   <div id="acctForm" class="hide"><label for="acEmail">Email</label><input type="email" id="acEmail" autocomplete="email" maxlength="200">
     <label for="acPw">Password (8+ characters)</label><input type="password" id="acPw" autocomplete="current-password" maxlength="200">
-    <label class="consent" for="acAgree"><input type="checkbox" id="acAgree"><span>To create an account, I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>. (Not needed to log in.)</span></label>
+    <input type="text" id="acHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><label class="consent" for="acAgree"><input type="checkbox" id="acAgree"><span>To create an account, I agree to the <a href="/terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>. (Not needed to log in.)</span></label>
     <button id="acLogin">Log in</button><button id="acReg" class="alt">Create account</button><div id="acErr" class="err" role="alert"></div></div></div>
 
 <div class="card" id="guide"><div class="steps"><span><b>1</b> Your target role</span><span><b>2</b> Paste your resume</span><span><b>3</b> Add the job description (optional)</span><span><b>4</b> Generate</span></div>
@@ -348,7 +351,7 @@ label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#
   <div id="scrErr" class="err" role="alert"></div><div id="scrOut"></div>
 </section>
 <section class="card" id="waitCard"><h3 style="margin-top:0">Want Pro when it is ready?</h3><p class="note">MockRep stays free to try. Leave your email to hear when the Pro plan opens. One email, no spam. You can ask to be removed any time.</p>
-  <div class="wl"><input type="email" id="wlEmail" maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
+  <div class="wl"><input type="text" id="wlHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0"><input type="email" id="wlEmail" required maxlength="254" autocomplete="email" placeholder="you@example.com" aria-label="Email for the Pro waitlist"><button id="wlBtn" class="alt" style="margin:0">Join the waitlist</button></div><div id="wlMsg" class="note" role="status"></div></section>
 <section class="card" id="trust" aria-labelledby="trustH"><h2 id="trustH">Questions and trust</h2>
 <p class="note">Built by <a href="/about">Ranjit Kumar Sahoo</a>, who has worked in US IT staffing since 2017. Contact: <a href="mailto:ranjitkumarsahoo77@gmail.com">ranjitkumarsahoo77@gmail.com</a>. MockRep is free today. If paid plans ever launch, a clear refund policy will be published before anyone is asked to pay.</p>
 <details><summary>What AI does MockRep use?</summary><p>NVIDIA Nemotron models, served by Nebius Token Factory. Your text is sent there to produce your result. Our account has Zero Data Retention turned on, so Nebius is set not to keep prompts or outputs.</p></details>
@@ -360,4 +363,5 @@ label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#
 </main></div>
 <div class="foot">Powered by NVIDIA Nemotron models on Nebius Token Factory. AI feedback and salary figures are estimates, not guarantees. <br><a href="/about">About</a> &middot; <a href="mailto:ranjitkumarsahoo77@gmail.com">Contact</a> &middot; <a href="/terms">Terms</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/cookies">Cookies</a> &middot; <a href="https://github.com/ranjit-sahoo/mockrep" rel="noopener">Source code</a></div>
 </div>
+<div id="cookieBar" class="hide" role="dialog" aria-label="Cookie notice"><span>MockRep uses one login cookie only if you sign in. No ads or tracking cookies. <a href="/cookies">Cookie policy</a></span><button id="cookieOk" type="button">Got it</button></div>
 <script src="/static/app.js" defer></script></body></html>
