@@ -199,7 +199,14 @@ def logout(token: str | None):
             c.run("DELETE FROM auth_sessions WHERE token_hash=?", (_hash_token(token),))
 
 
+def cancel_subscription(user_id: str) -> None:
+    """Hook: no paid plans exist yet. When billing is added, cancel the user's subscription here so
+    auto-pay stops from the next cycle. delete_account calls it first."""
+    return None
+
+
 def delete_account(user_id: str):
+    cancel_subscription(user_id)
     with Conn() as c:
         c.run("DELETE FROM history WHERE user_id=?", (user_id,))
         c.run("DELETE FROM progress WHERE user_id=?", (user_id,))
