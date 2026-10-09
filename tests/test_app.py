@@ -120,10 +120,13 @@ def test_negotiation_report_needs_message():
 
 def test_recruiter_screening_ranks():
     body = {"role": "QA", "jd": JD, "candidates": [{"name": "A", "resume": RESUME}, {"name": "B", "resume": RESUME + " more text here"}, {"name": "C", "resume": "tiny"}]}
-    d = c.post("/api/recruiter/screen", json=body).json()
+    assert c.post("/api/recruiter/screen", json=body).status_code == 403  # guests and candidates cannot use recruiter tools
+    rc = TestClient(app)
+    assert rc.post("/api/auth/register", json={"email": "rec1@example.com", "password": "longpassword1", "agree": True, "role": "recruiter"}).status_code == 200
+    d = rc.post("/api/recruiter/screen", json=body).json()
     assert d["total"] == 2 and len(d["ranked"]) == 2
     assert d["ranked"][0]["score"] >= d["ranked"][1]["score"]
-    assert c.post("/api/recruiter/screen", json={"role": "QA", "candidates": []}).status_code == 400
+    assert rc.post("/api/recruiter/screen", json={"role": "QA", "candidates": []}).status_code == 400
 
 
 def test_extract_txt_upload():
