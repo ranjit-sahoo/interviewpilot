@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import accounts, bank, brief, builder, card, coding, companies, icons, llm, prep, services, star
 from app.guard import FailLimiter, RateLimiter, client_key, rate_limit
@@ -72,6 +73,16 @@ async def security_headers(request: Request, call_next):
         "form-action 'self'; frame-ancestors 'none'",
     )
     return resp
+
+
+_NOT_FOUND = """<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - MockRep</title><meta name="robots" content="noindex"><link rel="icon" href="/static/icons/icon-192.png"><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#eef2fb;font:16px/1.6 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;text-align:center;padding:20px}.logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#9be000,#76b900);display:inline-grid;place-items:center;color:#0b1200;font-weight:900}h1{font-size:30px;margin:14px 0 6px}p{color:#9aa6c0;margin:0 0 20px}a{display:inline-block;padding:12px 22px;border-radius:12px;background:linear-gradient(135deg,#3b66e0,#2c52c4);color:#fff;font-weight:700;text-decoration:none}</style></head><body><main><span class="logo">MR</span><h1>This page was not found</h1><p>The link may be old or mistyped.</p><a href="/">Go to MockRep home</a></main></body></html>"""
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and not request.url.path.startswith("/api/") and "text/html" in request.headers.get("accept", ""):
+        return HTMLResponse(_NOT_FOUND, status_code=404)
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=getattr(exc, "headers", None))
 
 
 @app.exception_handler(Exception)
@@ -521,6 +532,7 @@ class AuthIn(BaseModel):
     email: str = Field(max_length=320)
     password: str = Field(max_length=200)
     agree: bool | None = None
+    website: str | None = Field(None, max_length=200)  # honeypot: real users never fill this
 
 
 class SaveIn(BaseModel):
@@ -531,6 +543,8 @@ class SaveIn(BaseModel):
 
 @app.post("/api/auth/register", dependencies=[Depends(auth_limit)])
 def auth_register(body: AuthIn, request: Request):
+    if body.website:
+        raise HTTPException(400, "Could not create the account.")
     if not _signup_limiter.check(client_key(request)):
         raise HTTPException(429, "Too many sign-ups from this network today. Please try again later.")
     if body.agree is False:
@@ -588,10 +602,13 @@ def progress(u=Depends(need_user)):
 
 class WaitIn(BaseModel):
     email: str = Field(max_length=254)
+    website: str | None = Field(None, max_length=200)  # honeypot
 
 
 @app.post("/api/waitlist", dependencies=LIMITED)
 def waitlist(body: WaitIn, request: Request):
+    if body.website:
+        return {"ok": True, "new": True}  # bot filled the hidden field: pretend success, store nothing
     if not _waitlist_limiter.check(client_key(request)):
         raise HTTPException(429, "Too many requests from this network today. Please try again later.")
     try:
@@ -638,6 +655,42 @@ def app_icon(name: str):
 def service_worker():
     # Served from the root so its scope covers the whole app.
     return FileResponse(os.path.join(STATIC, "sw.js"), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+
+
+_og_png: bytes | None = None
+
+
+@app.get("/og.png")
+def og_image():
+    """Social preview image (1200x630), drawn once and kept in memory."""
+    global _og_png
+    if _og_png is None:
+        from PIL import Image, ImageDraw, ImageFilter
+
+        W, H = 1200, 630
+        img = Image.new("RGB", (W, H), "#0b1020")
+        glow = Image.new("RGB", (W, H), "#0b1020")
+        gd = ImageDraw.Draw(glow)
+        gd.ellipse([700, -250, 1350, 300], fill="#2a4fa8")
+        gd.ellipse([-300, -150, 300, 350], fill="#3f6a00")
+        img = glow.filter(ImageFilter.GaussianBlur(110))
+        d = ImageDraw.Draw(img)
+        d.rounded_rectangle([70, 70, 134, 134], radius=18, fill="#8fcf00")
+        d.text((102, 102), "MR", font=card._f(30, True), fill="#0b1200", anchor="mm")
+        d.text((154, 102), "MockRep", font=card._f(34, True), fill="#eef2fb", anchor="lm")
+        d.text((70, 250), "Walk into every", font=card._f(78, True), fill="#eef2fb", anchor="ls")
+        d.text((70, 345), "interview ready.", font=card._f(78, True), fill="#9be000", anchor="ls")
+        d.text((70, 430), "AI mock interviews, resume review and prep for any job.", font=card._f(34), fill="#c4cde0", anchor="ls")
+        d.text((70, 480), "Speak or type. Free, no login.", font=card._f(34), fill="#c4cde0", anchor="ls")
+        buf = io.BytesIO()
+        img.convert("P", palette=Image.ADAPTIVE, colors=64).save(buf, "PNG", optimize=True)
+        _og_png = buf.getvalue()
+    return Response(_og_png, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(os.path.join(STATIC, "icons", "icon-192.png"), media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/robots.txt")
