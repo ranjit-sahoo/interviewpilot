@@ -1,6 +1,6 @@
 // Minimal service worker: makes the app installable and keeps the shell available offline.
 // API calls are never cached.
-const CACHE = "ip-shell-v12";
+const CACHE = "ip-shell-v13";
 const SHELL = ["/", "/static/manifest.webmanifest", "/static/icons/icon-192.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {
