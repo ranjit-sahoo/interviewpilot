@@ -69,7 +69,7 @@ function startScreen(){
  const cb=h('input',{type:'checkbox',id:'cb'});const err=h('div',{class:'err',role:'alert'});
  const needVoice=c.modules.includes('voice')||c.modules.includes('reading');
  let saved=null;try{saved=localStorage.getItem('mr_s_'+ORIG)}catch(e){}
- show(h('div',{class:'card'},h('h1',{},t('hello')+(INFO.name&&!INFO.open?', '+INFO.name:'')),h('p',{},t('intro')+' ',h('b',{},c.role)+'. ',t('time')+' ',h('b',{},String(mins)),' '+t('min')),
+ show(h('div',{class:'card'},h('h1',{},t('hello')+(INFO.name&&!INFO.open?', '+INFO.name:'')),h('p',{},t('intro')+' ',h('b',{},c.role),'. ',t('time')+' ',h('b',{},String(mins)),' '+t('min')),
   needVoice?h('p',{class:'mute'},t('mic')):null,h('p',{class:'mute'},t('priv')+' ',h('b',{},String(c.retention_days)+' '),t('days')),
   INFO.open?[name,ph]:(INFO.name?null:name),
   h('label',{class:'c',for:'cb'},cb,h('span',{},t('consent'))),err,saved?h('p',{class:'mute'},t('resume')):null,
