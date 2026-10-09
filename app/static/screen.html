@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="#0b1020"><title>Screening - MockRep</title>
+<style>
+:root{--bg:#0b1020;--ink:#eef2fb;--mute:#9aa6c0;--acc:#76b900;--acc2:#5b8cff;--bad:#ff6b7a;--warn:#ffb84d;--line:rgba(255,255,255,.12);--brand:#5b8cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 60px}
+.top{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 0 12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700}.brand img{height:34px;max-width:120px;object-fit:contain;border-radius:6px}
+select{background:#0d1426;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:14px;min-height:40px}
+.card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+h1{font-size:22px;margin:4px 0 8px;line-height:1.25}h2{font-size:18px;margin:0 0 8px}p{margin:8px 0}.mute{color:var(--mute);font-size:14px}
+button{font:inherit;font-weight:600;min-height:48px;padding:10px 18px;border:0;border-radius:12px;background:var(--brand);color:#fff;cursor:pointer;margin:6px 6px 6px 0}
+button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}button.red{background:#c4384a}button:disabled{opacity:.5}
+input[type=text],input[type=tel],textarea{width:100%;background:#0d1426;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;margin:4px 0 10px}
+label.c{display:flex;gap:10px;align-items:flex-start;margin:10px 0}label.c input{margin-top:5px;width:20px;height:20px;flex:none}
+.q{font-size:20px;font-weight:600;line-height:1.4;margin:8px 0}.timer{font-size:28px;font-weight:700;color:var(--acc)}.timer.low{color:var(--bad)}
+.bar{height:6px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin:6px 0 12px}.bar i{display:block;height:100%;background:var(--brand);width:0}
+.live{min-height:70px;background:#0d1426;border:1px dashed var(--line);border-radius:12px;padding:12px;color:var(--mute);margin:10px 0}
+.err{color:var(--bad);font-size:14px;min-height:20px}.pass{font-size:18px;line-height:1.7;background:#0d1426;border-radius:12px;padding:14px;margin:8px 0;user-select:none;-webkit-user-select:none}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:12px;margin:6px 0;cursor:pointer}.opt input{margin-top:5px;width:20px;height:20px;flex:none}
+.rec{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--bad);margin-inline-end:6px;animation:p 1s infinite}@keyframes p{50%{opacity:.3}}
+body.lite .rec{animation:none}body.lite{background:#000}
+[dir=rtl]{text-align:right}
+</style></head><body><div class="wrap"><div class="top"><div class="brand" id="brand"></div><select id="lang" aria-label="Language"><option value="en">English</option><option value="hinglish">Hinglish</option><option value="hi">हिन्दी</option><option value="ar">العربية</option></select></div><div id="app"><p class="mute">Loading...</p></div></div><script src="/static/screen.js"></script></body></html>
