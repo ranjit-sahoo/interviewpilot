@@ -121,6 +121,7 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 #drawer>button[data-v]{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:8px;width:100%;text-align:left;background:transparent;box-shadow:none;color:var(--ink);margin:2px 0;padding:11px 10px;border-radius:12px;font-size:16px;font-weight:600;min-height:48px}
 #drawer>button[data-v] i{font-style:normal;font-size:20px;grid-row:span 2;text-align:center}
 #drawer>button[data-v] small{grid-column:2;color:var(--mute);font-weight:400;font-size:13px;margin-top:-2px}
+#drawer>button[data-act],#drawer>a{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:8px;width:100%;text-align:left;background:transparent;box-shadow:none;color:var(--ink);margin:2px 0;padding:11px 10px;min-height:44px;border-radius:12px;font-size:15px;font-weight:600;text-decoration:none;border:0;box-sizing:border-box}#drawer>button[data-act] i,#drawer>a i{font-style:normal;font-size:18px;text-align:center}#drawer>button[data-act=del]{color:#ff9b9b}
 #drawer>button[data-v].on{background:linear-gradient(135deg,#3b66e0,#2c52c4)}#drawer>button[data-v].on small{color:#dfe7ff}
 .dgroup{color:var(--mute);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 4px}
 .hgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -164,7 +165,16 @@ label[for=ivLevel],#ivLevel,label[for=ivMode],#ivMode,#ivFu,#ivFu+*,label:has(>#
 <button data-v="recruiter"><i>&#128101;</i>Recruiter Mode</button>
 <div class="dgroup">Account</div>
 <button data-v="history" id="dHist" class="hide"><i>&#128202;</i>My History</button>
-<button data-v="account"><i>&#128100;</i>Log in / Sign up</button>
+<button data-v="account" id="dLogin"><i>&#128100;</i>Log in / Sign up</button>
+<button data-act="out" id="dOut" class="hide"><i>&#128682;</i>Sign out</button>
+<button data-act="del" id="dDel" class="hide"><i>&#128465;</i>Delete my account</button>
+<div class="dgroup">About MockRep</div>
+<a href="/about"><i>&#8505;</i>About</a>
+<a href="mailto:ranjitkumarsahoo77@gmail.com"><i>&#9993;</i>Contact us</a>
+<a href="/terms"><i>&#128220;</i>Terms &amp; Conditions</a>
+<a href="/privacy"><i>&#128274;</i>Privacy Policy</a>
+<a href="/cookies"><i>&#127850;</i>Cookies</a>
+<a href="https://github.com/ranjit-sahoo/mockrep" rel="noopener"><i>&lt;/&gt;</i>Source code</a>
 </nav>
 <div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
