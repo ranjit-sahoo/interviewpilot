@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MockRep - AI interview prep</title>
-<meta name="description" content="AI interview prep for IT candidates and recruiters: resume review, JD match, voice mock interviews, salary negotiation practice and recruiter screening.">
+<meta name="description" content="AI interview prep for any job: resume review, JD match, voice mock interviews, salary negotiation practice and recruiter screening.">
 <meta name="theme-color" content="#0b1020"><link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="icon" href="/static/icons/icon-192.png"><link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta property="og:title" content="MockRep"><meta property="og:description" content="Practice interviews out loud with AI, fix your resume, match it to any job, rehearse salary negotiation.">
@@ -108,12 +108,75 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 @media(max-width:820px){.sgrid{grid-template-columns:1fr}}
 @media(min-width:1100px){.wrap{max-width:1280px}.layout{display:grid;grid-template-columns:380px minmax(0,1fr);gap:24px;align-items:start}.side{position:sticky;top:12px}.side .card{margin-top:0}.tabs{flex-wrap:wrap;overflow:visible;position:static}.tabs button{flex:0 1 auto}.work>.tabs{margin-top:0}.sgrid{gap:24px}}
 @media(min-width:821px) and (max-width:1099px){.tabs{flex-wrap:wrap;overflow:visible}.tabs button{flex:0 1 auto}}
-</style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><a class="skip" href="#profile">Skip to the main form</a><div class="wrap">
+
+#topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(11,16,32,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+#menuBtn{width:46px;height:46px;min-height:46px;padding:0;margin:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--line);border-radius:12px;box-shadow:none}
+#menuBtn span{display:block;width:22px;height:2.5px;background:var(--ink);border-radius:2px}
+.tbrand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px}.tbrand .logo{width:30px;height:30px;font-size:12px}
+#viewTitle{margin-left:auto;color:var(--mute);font-size:14px;font-weight:600;text-align:right}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40}
+#drawer{position:fixed;top:0;left:0;bottom:0;width:min(86vw,340px);background:#0d1426;border-right:1px solid var(--line);z-index:50;overflow-y:auto;padding:12px 12px 40px;box-shadow:8px 0 30px rgba(0,0,0,.5)}
+#drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 10px}
+#drawer .dhead b{font-size:18px}#menuClose{width:44px;height:44px;min-height:44px;padding:0;margin:0;font-size:28px;line-height:1;background:transparent;box-shadow:none;color:var(--ink)}
+#drawer>button[data-v]{display:grid;grid-template-columns:34px 1fr;align-items:center;column-gap:8px;width:100%;text-align:left;background:transparent;box-shadow:none;color:var(--ink);margin:2px 0;padding:11px 10px;border-radius:12px;font-size:16px;font-weight:600;min-height:48px}
+#drawer>button[data-v] i{font-style:normal;font-size:20px;grid-row:span 2;text-align:center}
+#drawer>button[data-v] small{grid-column:2;color:var(--mute);font-weight:400;font-size:13px;margin-top:-2px}
+#drawer>button[data-v].on{background:linear-gradient(135deg,#3b66e0,#2c52c4)}#drawer>button[data-v].on small{color:#dfe7ff}
+.dgroup{color:var(--mute);font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 4px}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hc{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:var(--card);border:1px solid var(--line);color:var(--ink);padding:16px;border-radius:16px;box-shadow:none;min-height:130px}
+.hc i{font-style:normal;font-size:28px}.hc b{font-size:17px}.hc span{color:var(--mute);font-size:13.5px;font-weight:400;line-height:1.35}
+@media(min-width:900px){.hgrid{grid-template-columns:repeat(3,1fr)}}
+.toggle.big button{padding:14px 26px;font-size:17px}
+/* view model: one focused screen at a time */
+.tabs{display:none!important}
+body[data-view] .hero .strip,body[data-view] .hero .feat{display:none}
+body:not([data-view=home]) .hero,body:not([data-view=home]) #sample,body:not([data-view=home]) #homeGrid,body:not([data-view=home]) #waitCard,body:not([data-view=home]) #trust,body:not([data-view=home]) #guide{display:none}
+body[data-view=home] .layout,body[data-view=home] #acct{display:none}
+body:not([data-view=account]) #acct{display:none}
+body[data-view=account] .layout{display:none}
+body[data-view=bank] #profile,body[data-view=code] #profile,body[data-view=builder] #profile,body[data-view=history] #profile{display:none}
+body[data-view=review] label[for=jd],body[data-view=review] #jd,body[data-view=prep] #detNote{display:none}
+body[data-view=bank] .layout,body[data-view=code] .layout,body[data-view=builder] .layout,body[data-view=history] .layout{display:block}
+@media(min-width:1100px){body[data-view=bank] .layout,body[data-view=code] .layout,body[data-view=builder] .layout,body[data-view=history] .layout{display:block}}
+body.guided #acct{display:none}
+</style></head><body><div id="wake" class="hide" role="status">Waking the server (about 30 s). It sleeps when nobody is using it. Your page will continue by itself.</div><a class="skip" href="#profile">Skip to the main form</a><div id="topbar"><button id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="drawer"><span></span><span></span><span></span></button><div class="tbrand"><span class="logo">MR</span>MockRep</div><div id="viewTitle"></div></div>
+<div id="scrim" class="hide"></div>
+<nav id="drawer" aria-label="Main menu" class="hide"><div class="dhead"><b>Menu</b><button id="menuClose" aria-label="Close menu">&times;</button></div>
+<button data-v="home"><i>&#8962;</i>Home</button>
+<div class="dgroup">Practice</div>
+<button data-v="interview"><i>&#127908;</i>Mock Interview<small>Speak or type your answers</small></button>
+<button data-v="prep"><i>&#128221;</i>Interview Prep<small>Questions with model answers</small></button>
+<button data-v="bank"><i>&#128218;</i>Question Bank<small>Common questions by job</small></button>
+<div class="dgroup">Your resume</div>
+<button data-v="review"><i>&#128196;</i>Resume Review<small>Upload and get a score</small></button>
+<button data-v="builder"><i>&#9998;</i>Resume Builder<small>Make a resume and download PDF</small></button>
+<button data-v="match"><i>&#127919;</i>Job Match<small>Compare resume with a job</small></button>
+<div class="dgroup">More tools</div>
+<button data-v="star"><i>&#11088;</i>STAR Answer Builder</button>
+<button data-v="brief"><i>&#127970;</i>Company Brief</button>
+<button data-v="nego"><i>&#128176;</i>Salary Negotiation</button>
+<button data-v="code"><i>&#128187;</i>Coding Practice</button>
+<button data-v="recruiter"><i>&#128101;</i>Recruiter Mode</button>
+<div class="dgroup">Account</div>
+<button data-v="history" id="dHist" class="hide"><i>&#128202;</i>My History</button>
+<button data-v="account"><i>&#128100;</i>Log in / Sign up</button>
+</nav>
+<div class="wrap">
 <header class="hero"><div class="brand"><span class="logo">MR</span>MockRep</div>
 <h1>Walk into every interview <em>ready</em>.</h1>
-<div class="sub">An AI coach for IT candidates and recruiters. Fix your resume, match it to the job, practice out loud, and rehearse the salary talk. Built for US and India.</div><p class="promise">Paste your resume and a job description. In about a minute you get tailored questions, a scored mock interview and a report that tells you what to fix. Free, no login.</p>
+<div class="sub">Practice your interview with an AI coach. Works for any job: IT, BPO, hotel, airline, banking and more. Built for the US and India.</div><p class="promise">Paste your resume and a job description. In about a minute you get tailored questions, a scored mock interview and a report that tells you what to fix. Free, no login.</p>
 <ol class="strip" aria-label="How it works"><li><b>1</b><span>Get your prep pack</span></li><li><b>2</b><span>Do a mock interview, typed or spoken</span></li><li><b>3</b><span>Read your report, fix, retry</span></li></ol>
 <div class="feat"><span>Prep pack with model answers</span><span>Resume review</span><span>Resume-to-job match</span><span>Voice mock interviews with follow-ups</span><span>Company brief</span><span>STAR answer builder</span><span>Shareable score card</span><span>English coaching</span><span>Salary negotiation</span><span>Recruiter screening</span></div></header>
+<section id="homeGrid"><h2 style="margin:18px 0 6px">What do you want to do?</h2>
+<div class="hgrid">
+<button data-v="interview" class="hc"><i>&#127908;</i><b>Mock Interview</b><span>Practice out loud or by typing. Get a score.</span></button>
+<button data-v="prep" class="hc"><i>&#128221;</i><b>Interview Prep</b><span>Likely questions with answers for your job.</span></button>
+<button data-v="review" class="hc"><i>&#128196;</i><b>Resume Review</b><span>Upload your resume and get a rating.</span></button>
+<button data-v="builder" class="hc"><i>&#9998;</i><b>Resume Builder</b><span>Make a clean resume and download it.</span></button>
+<button data-v="bank" class="hc"><i>&#128218;</i><b>Question Bank</b><span>Common questions for BPO, hotel, airline and more.</span></button>
+<button data-v="menu" class="hc"><i>&#9776;</i><b>More tools</b><span>Job match, salary talk, company brief and more.</span></button>
+</div></section>
 <section class="card" id="sample"><details id="sampleDet"><summary><h2 id="sampleH" style="display:inline">See a real report</h2></summary>
 <p class="note">Real output from MockRep on a <b>fictional</b> sample resume (QA Automation Engineer) and a sample answer written for this demo. Nothing here is a customer review.</p>
 <div class="sgrid"><div class="sbox"><h3>Mock interview question</h3><p class="sq">Can you describe a time when you identified a critical bug during regression testing that had not been caught earlier, how you reported it, and what was the outcome?</p><p class="sa"><b>Sample answer:</b> Last spring, during regression on our checkout service, I noticed our nightly API suite passed but the order totals looked off in staging for orders with two discount codes. I wrote a quick Postman check and reproduced it: the second code was applied to the pre-discount price, so customers were overcharged by about 4 percent. I ...</p>
@@ -159,13 +222,8 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
 <section id="t-match" class="card hide"><button id="btnMatch">Compare resume with job description</button><div id="matchOut"></div></section>
 
 <section id="t-interview" class="card hide">
-  <div id="ivSetup"><p class="note" style="margin-top:0">No resume needed: enter your target role above and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">Difficulty</label>
-    <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="basic">Basic (10th / 12th / graduate, India)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
-    <label for="ivMode">Session length</label>
-    <select id="ivMode"><option value="5">Quick: 5 questions</option><option value="8">Interview day: 8 questions, 2:30 per answer (timer)</option></select>
-    <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
-    <button id="btnStart" class="alt">Start mock interview</button>
-    <span class="toggle" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
+  <div id="ivSetup"><label style="margin-top:0">1. How do you want to answer?</label>
+    <span class="toggle big" role="group" aria-label="Answer mode"><button id="mText" class="on">Type</button><button id="mVoice">Voice</button></span>
     <div class="note" id="voiceNote"></div>
     <div id="voiceOpts" class="hide">
       <label for="vAccent">Interviewer accent</label>
@@ -175,7 +233,14 @@ body.guided #acct,body.guided .tabs,body.guided .foot .hide-guided,body.guided #
       <input type="range" id="vRate" min="0.6" max="1.1" step="0.05" aria-label="Speaking speed">
       <button id="vTest" class="ghost">Hear a sample</button>
       <div class="note">Voices come from your browser. Chrome and Edge on desktop usually have the most natural ones.</div>
-    </div></div>
+    </div>
+<p class="note">No resume needed: enter your target role and start. Add your resume for questions built from your own experience.</p><label for="ivLevel">2. Difficulty</label>
+    <select id="ivLevel"><option value="auto">Auto (matches your resume, adapts as you answer)</option><option value="basic">Basic (10th / 12th / graduate, India)</option><option value="fresher">Fresher (0-2 years)</option><option value="experienced">Experienced (mid to senior)</option><option value="brutal">Brutal (top-company bar)</option></select>
+    <label for="ivMode">3. Session length</label>
+    <select id="ivMode"><option value="5">Quick: 5 questions</option><option value="8">Interview day: 8 questions, 2:30 per answer (timer)</option></select>
+    <label style="display:block;margin:10px 0"><input type="checkbox" id="ivFu" checked style="width:auto"> Interviewer asks follow-up questions (like a real interview)</label>
+    <button id="btnStart" class="alt">Start mock interview</button>
+</div>
   <div id="interview" class="hide">
     <div><span class="pill" id="qnum"></span><span class="pill" id="qtype"></span><span class="pill hide" id="ivTimer" role="timer" aria-live="off"></span></div>
     <h3 id="qtext"></h3>
