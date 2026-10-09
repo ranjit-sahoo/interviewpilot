@@ -181,9 +181,9 @@ function init(){M=window.__mr;if(!M)return;const st=h('style',{},STYLE);document
  lite.onclick=()=>{const on=document.body.classList.toggle('lite');try{localStorage.setItem('mr_lite',on?'1':'0')}catch(e){}lite.lastChild.textContent='Low-data mode: '+(on?'on':'off')};
  const dl2=$('dLogin');if(dl2)dl2.before(lite);
  new MutationObserver(onView).observe(document.body,{attributes:true,attributeFilter:['data-view']});
- const sync=async()=>{try{const j=await get('/api/auth/me');ME=j.user;if(ME&&ME.role==='recruiter'){try{const o=await get('/api/hub/org');ME.company=o.name}catch(e){}}}catch(e){ME=null}menu();const v=document.body.dataset.view;if(v&&v.startsWith('h-'))vRender(v);
+ let prev=null;const sync=async()=>{const was=prev;try{const j=await get('/api/auth/me');ME=j.user;if(ME&&ME.role==='recruiter'){try{const o=await get('/api/hub/org');ME.company=o.name}catch(e){}}}catch(e){ME=null}prev=ME;menu();const hb=$('dHist');if(hb&&ME&&ME.role==='recruiter')hb.style.display='none';else if(hb)hb.style.display='';const ah=$('acctHist');if(ah&&ME&&ME.role==='recruiter')ah.style.display='none';const v=document.body.dataset.view;if(ME&&ME.role==='recruiter'&&!was&&v==='account')M.setView('h-dash');if(v&&v.startsWith('h-'))vRender(v);
   if(ME&&ME.role==='recruiter'&&['prep','interview','review','match','nego','star','brief','bank','code','builder'].includes(v))M.setView('h-dash')};
- window.addEventListener('mr:me',sync);sync().then(()=>{const hv=(location.hash||'').slice(1);if(RENDER[hv])M.setView(hv,false)})}
+ window.addEventListener('mr:me',sync);sync().then(()=>{const hv=window.__startHash||'';if(RENDER[hv])M.setView(hv,false)})}
 document.addEventListener('change',e=>{if(e.target.name==='acRole'){const w=$('acInvWrap');if(w)w.classList.toggle('hide',e.target.value!=='recruiter')}});
 if(window.__mr)init();else window.addEventListener('mr:ready',init);
 })();
