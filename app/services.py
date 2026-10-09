@@ -2,7 +2,7 @@ import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-from app import comms, db, llm, market, prompts
+from app import basic_in, comms, db, llm, market, prompts
 
 MAX_RESUME_CHARS = 12000
 MAX_JD_CHARS = 6000
@@ -28,8 +28,20 @@ def _ctx(resume: str, role: str, jd: str = "") -> str:
     return s
 
 
-def _sys(template: str, country: str, **kw) -> str:
-    return template.format(market=market.context(country), **kw)
+def _sys(template: str, country: str, basic: bool = False, **kw) -> str:
+    return template.format(market=market.BASIC_IN if basic else market.context(country), **kw)
+
+
+def _ref_note(s: dict, q: dict) -> str:
+    """Reference answer or guidance for a question from the India basic set, so scoring knows what a good answer says.
+    The references stay on the server (session key "refs"); they are never sent to the browser."""
+    ref = (s.get("refs") or {}).get(q.get("question", "")) if isinstance(q, dict) else None
+    if not ref:
+        return ""
+    return (
+        "\n\nREFERENCE (a sample answer or guidance for this exact question; judge the candidate against its content, "
+        "not its exact words; blanks in [square brackets] are for the candidate's own details; the stronger answer may build on it):\n" + ref
+    )
 
 
 # ---------- country ----------
@@ -66,6 +78,7 @@ LEVELS = {
     "auto": "Calibrate to the seniority shown on the resume and role.",
     "fresher": "Entry level (0-2 years): fundamentals, simple practical scenarios, supportive but realistic.",
     "experienced": "Mid to senior: depth, design trade-offs, ownership, and real production situations.",
+    "basic": "Basic level (10th/12th pass or any graduate): simple everyday questions, supportive tone, no technical depth.",
     "brutal": "Very demanding, top-company bar: hard problems, edge cases, probing every assumption, senior-level expectations.",
 }
 MAX_FOLLOWUPS = 2
@@ -79,22 +92,32 @@ def _level(v) -> str:
 def start_session(resume: str, role: str, jd: str = "", country: str = "US", level: str = "auto", followups: bool = True, count: int = N_QUESTIONS) -> dict:
     country = market.normalize(country)
     level = _level(level)
+    if level == "basic" and country != "India":
+        level = "fresher"  # the basic set is India only
     count = max(3, min(int(count), 8))
-    qs = llm.chat_json(
-        "questions",
-        _sys(prompts.QUESTIONS_SYSTEM, country, n=count, level_note=LEVELS[level]),
-        _ctx(resume, role, jd),
-        model=llm.FAST_MODEL,
-    ).get("questions", [])[:count]
+    basic = market.is_basic_in(country, resume, role, level)
+    refs = {}
+    if basic:
+        picked = basic_in.pick(count, role, jd)  # guaranteed: the questions come straight from the reviewed set
+        refs = {q["question"]: q["ref"] for q in picked if q.get("ref")}
+        qs = [{"type": q["type"], "question": q["question"], "basic": True} for q in picked]
+        level = "basic"
+    else:
+        qs = llm.chat_json(
+            "questions",
+            _sys(prompts.QUESTIONS_SYSTEM, country, n=count, level_note=LEVELS[level]),
+            _ctx(resume, role, jd),
+            model=llm.FAST_MODEL,
+        ).get("questions", [])[:count]
     if not qs:
         raise llm.LLMError("no questions generated")
     data = {
         "kind": "interview", "country": country, "resume": resume[:MAX_RESUME_CHARS], "role": role, "jd": jd[:MAX_JD_CHARS],
         "questions": qs, "index": 0, "turns": [], "done": False, "level": level, "followups": bool(followups),
-        "pending": None, "group": [],
+        "pending": None, "group": [], "basic": basic, "refs": refs,
     }
     sid = db.create(data)
-    return {"session_id": sid, "question": qs[0], "number": 1, "total": len(qs), "country": country, "level": level}
+    return {"session_id": sid, "question": qs[0], "number": 1, "total": len(qs), "country": country, "level": level, "basic": basic}
 
 
 def _interview(sid: str) -> dict:
@@ -119,8 +142,8 @@ def _adjust_next(s: dict) -> str | None:
     """Make the next main question harder or easier based on how this question went. Never blocks the flow."""
     g = s.get("group") or []
     nxt = s["index"]
-    if not g or nxt >= len(s["questions"]):
-        return None
+    if not g or nxt >= len(s["questions"]) or s.get("basic"):
+        return None  # the India basic set is fixed so its questions always appear
     avg = sum(g) / len(g)
     if avg >= 4.2:
         direction, note, tag = "noticeably harder and more probing", "very well", "harder"
@@ -186,14 +209,14 @@ def answer(sid: str, text: str) -> dict:
             model = llm.FAST_MODEL  # follow-ups stay quick
         else:
             q = main_q
-            user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
+            user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}{_ref_note(s, q)}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
             model = llm.STRONG_MODEL
-        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"]), user, model=model)
+        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"], bool(s.get("basic"))), user, model=model)
         if not isinstance(fb, dict):
             raise llm.LLMError("bad feedback")
         fb.setdefault("communication", {})
         fb["communication"]["metrics"] = comms.analyze(text)
-        src = (s["resume"], s["jd"], main_q["question"], text)
+        src = (s["resume"], s["jd"], main_q["question"], text, (s.get("refs") or {}).get(main_q["question"], ""))
         if invented_details(str(fb.get("stronger_answer") or ""), *src):
             fb["stronger_answer_note"] = "This sample includes example details (numbers or names) you did not give. Replace them with your real ones, or leave them out."
         s["turns"].append({"question": q, "answer": text, "feedback": fb, "followup": bool(pend)})
@@ -249,13 +272,13 @@ def retry(sid: str, text: str) -> dict:
         if len(tries) >= MAX_RETRIES:
             raise ValueError("That is 3 retries on this question. Move on to the next one.")
         q = t["question"]
-        user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
-        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"]), user, model=llm.STRONG_MODEL)
+        user = f"{_ctx(s['resume'], s['role'], s['jd'])}\n\nQUESTION ({q['type']}): {q['question']}{_ref_note(s, q)}\n\nCANDIDATE ANSWER:\n{text[:4000]}"
+        fb = llm.chat_json("turn", _sys(prompts.TURN_SYSTEM, s["country"], bool(s.get("basic"))), user, model=llm.STRONG_MODEL)
         if not isinstance(fb, dict):
             raise llm.LLMError("bad feedback")
         fb.setdefault("communication", {})
         fb["communication"]["metrics"] = comms.analyze(text)
-        if invented_details(str(fb.get("stronger_answer") or ""), s["resume"], s["jd"], q["question"], text):
+        if invented_details(str(fb.get("stronger_answer") or ""), s["resume"], s["jd"], q["question"], text, (s.get("refs") or {}).get(q["question"], "")):
             fb["stronger_answer_note"] = "This sample includes example details (numbers or names) you did not give. Replace them with your real ones, or leave them out."
         fb.pop("followup", None)
         before = _perf(t.get("best") or t["feedback"])
@@ -343,7 +366,7 @@ def report(sid: str) -> dict:
             f"EVIDENCE: answer text only, not audio. Exact completed counts: {main} main questions, "
             f"{len(s['turns']) - main} follow-ups, {len(s['turns'])} total answers.\n\n{transcript}"
         )
-        rep = llm.chat_json("report", _sys(prompts.REPORT_SYSTEM, s["country"]), context, model=llm.STRONG_MODEL)
+        rep = llm.chat_json("report", _sys(prompts.REPORT_SYSTEM, s["country"], bool(s.get("basic"))), context, model=llm.STRONG_MODEL)
         rep = _ground_report(rep, s["turns"])
         s["report"] = rep
         db.save(sid, s)
