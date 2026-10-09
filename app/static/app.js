@@ -556,5 +556,6 @@ $('wlBtn').onclick=()=>busy($('wlBtn'),'Joining...',async()=>{$('wlMsg').textCon
   try{if(!localStorage.getItem('mr_cookie_ok'))$('cookieBar').classList.remove('hide')}catch(e){}
   $('cookieOk').onclick=()=>{$('cookieBar').classList.add('hide');try{localStorage.setItem('mr_cookie_ok','1')}catch(e){}};
   $('mVoice').addEventListener('click',()=>{if(!prefs.accent){const c=document.querySelector('#countries .on');if(c&&c.dataset.c==='India')prefs.accent='en-IN'}},true);
+  window.__startHash=(location.hash||'').slice(1);
   const start=(location.hash||'').slice(1);setView(TITLES[start]?start:'home',false);try{history.replaceState({v:document.body.dataset.view},'','#'+document.body.dataset.view)}catch(e){}
 })();
