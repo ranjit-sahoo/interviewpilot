@@ -164,8 +164,8 @@ def integrity(voice: list[dict], leaves: int, other_texts: list[str]) -> list[st
     if ref_close:
         flags.append(f"{len(ref_close)} answer(s) very close to a model answer's wording")
     bad_fu = [v for v in voice if v.get("fu_ok") is False]
-    if bad_fu:
-        flags.append(f"{len(bad_fu)} follow-up answer(s) did not relate to the first answer")
+    if len(bad_fu) >= 2:
+        flags.append(f"{len(bad_fu)} follow-up answers shared no key words with the first answers (can be normal; ask the candidate to explain)")
     full = " ".join(v.get("text", "") for v in voice)
     for o in other_texts:
         if sim(full, o) >= 0.5 and len(words(full)) > 40:
