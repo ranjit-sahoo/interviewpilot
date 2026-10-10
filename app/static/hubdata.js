@@ -30,7 +30,19 @@ const ROLES={
   criteria:['Licence check','Safety attitude','Route knowledge','Punctuality','Behaviour with customers']},
  admin:{label:'Admin / Office Assistant',must:['ms office','communication'],nice:['filing','coordination','email'],years:0,
   jd:'We are hiring Office Assistants.\n\nResponsibilities:\n- Handle reception, files and basic office coordination\n\nRequirements:\n- Basic MS Office, good communication, organised',
-  criteria:['Communication','Organisation','Computer basics','Reliability','Teamwork']}};
+  criteria:['Communication','Organisation','Computer basics','Reliability','Teamwork']},
+ uae_retail:{label:'UAE: Retail / Sales Associate',must:['sales','customer service'],nice:['retail','arabic','english','hindi','pos'],years:0,
+  jd:'We are hiring Retail Sales Associates for a store in the UAE.\n\nResponsibilities:\n- Welcome and assist customers of many nationalities\n- Keep displays and stock tidy\n- Handle billing\n\nRequirements:\n- Good spoken English (Arabic, Hindi or Urdu is a plus)\n- Customer-friendly and able to stand for long shifts\n\nAdd salary, visa and housing terms yourself as per UAE rules.',
+  criteria:['Communication','Customer handling','Teamwork across cultures','Stamina and shift fit','Honesty with cash and stock']},
+ uae_hospitality:{label:'UAE: Hotel / Restaurant Staff',must:['guest','service'],nice:['food and beverage','housekeeping','front office','english'],years:0,
+  jd:'We are hiring Hospitality Staff for a hotel or restaurant in the UAE.\n\nResponsibilities:\n- Welcome guests and serve with care\n- Keep service and hygiene standards\n\nRequirements:\n- Good English, polite and well-groomed\n- Willing to work shifts\n\nAdd salary, visa and accommodation terms yourself as per UAE rules.',
+  criteria:['Guest warmth','Handling complaints','Hygiene and safety','Communication','Shift fit']},
+ uae_driver:{label:'UAE: Driver / Delivery',must:['driving license'],nice:['delivery','route','vehicle maintenance'],years:1,
+  jd:'We are hiring Delivery Drivers in the UAE.\n\nRequirements:\n- Valid driving licence for the vehicle type (check the original; UAE licence or convertible foreign licence as per rules)\n- Knows routes, punctual, safe driver\n\nAdd salary, visa and vehicle terms yourself as per UAE rules.',
+  criteria:['Licence check','Safety attitude','Route knowledge','Punctuality','Customer behaviour']},
+ uae_security:{label:'UAE: Security / Front Desk',must:['security'],nice:['reception','cctv','first aid','english'],years:0,
+  jd:'We are hiring Security and Front Desk staff in the UAE.\n\nResponsibilities:\n- Control entry, keep logs, report incidents\n\nRequirements:\n- Alert, honest, good communication\n- Any required licences or training as per UAE rules (please check)\n\nAdd salary and visa terms yourself.',
+  criteria:['Alertness','Rule following','Communication','Calm under pressure','Honesty']}};
 const MSG={
  invite:{en:'Hello {name}, this is {company}. We are hiring for {role}. Please complete a short online screening (about {min} minutes, voice answers on your phone): {link}\nIt is free for you. Thank you.',
   hinglish:'Namaste {name}, main {company} se. Hum {role} ke liye hire kar rahe hain. Please yeh chhota online screening complete karein (lagbhag {min} minute, phone par bolkar jawab): {link}\nAapke liye free hai. Dhanyavaad.',
