@@ -23,6 +23,10 @@ def content(t: str) -> set:
 
 
 def pool_for(pool: str) -> list[dict]:
+    return [o for o in _pool_raw(pool) if o["q"].rstrip().endswith(("?", "."))]  # drop cut-off or non-question entries
+
+
+def _pool_raw(pool: str) -> list[dict]:
     if pool in hubdata.EXTRA_ROLES:
         gen = [o for o in DATA if o["cat"] == "general" and o["iv"] and o["ref"] and o["id"] != "A1"]
         extra = [{"id": f"{pool}{i}", "q": q, "ref": k} for i, (q, k) in enumerate(hubdata.EXTRA_ROLES[pool][1])]
