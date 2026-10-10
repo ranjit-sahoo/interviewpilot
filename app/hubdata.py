@@ -57,6 +57,43 @@ POOL_LABELS = {
     **{k: v[0] for k, v in EXTRA_ROLES.items()},
 }
 
+# UAE / Gulf role sets. Questions only; no salary, visa or legal claims.
+EXTRA_ROLES.update({
+    "uae_retail": ("UAE: Retail / Sales Associate", [
+        ("How would you greet a customer from a different country who speaks little English?", "smile greet patient simple words gestures help respect"),
+        ("A customer wants a discount you cannot give. What do you say?", "polite explain policy alternative offer manager respect"),
+        ("How do you stay active during a long shift in a busy mall?", "water breaks focus team energy stock customers"),
+        ("Why do you want to work in retail in the UAE?", "customer experience learn team growth reliable"),
+        ("How do you work with people of many nationalities?", "respect listen team language culture patient"),
+        ("What would you do if a customer returns a product without a receipt?", "polite policy check supervisor explain solution"),
+    ]),
+    "uae_hospitality": ("UAE: Hotel / Restaurant Staff", [
+        ("How would you welcome a guest arriving late at night?", "smile greet warm tired quick check in help bags"),
+        ("A guest complains the room is not clean. What do you do?", "apologise listen quick fix inform supervisor follow up"),
+        ("How do you work in split shifts or long hours?", "plan rest discipline team schedule health"),
+        ("How do you handle guests with food allergies or special diets?", "ask confirm kitchen inform careful safety"),
+        ("How do you respect different cultures and customs of guests?", "respect listen learn polite greeting custom"),
+        ("What does good service mean to you?", "guest need quick polite friendly follow up"),
+    ]),
+    "uae_driver": ("UAE: Driver / Delivery", [
+        ("How do you plan a day of deliveries?", "route plan time map priority traffic update customer"),
+        ("What do you do when the customer is not at the address?", "call wait message inform company safe option"),
+        ("How do you drive safely in heat, fog or heavy traffic?", "speed distance rest water careful lights vehicle check"),
+        ("What do you check on your vehicle before you start?", "tyres oil brakes lights fuel clean documents"),
+        ("A parcel is damaged. What do you do?", "inform company photo report apologise customer"),
+        ("Why should a company trust you with its vehicle?", "honest careful punctual licence record responsible"),
+    ]),
+    "uae_security": ("UAE: Security / Front Desk", [
+        ("How do you stay alert during a long watch?", "focus walk rounds check rest water attention routine"),
+        ("A visitor has no appointment but insists on entering. What do you do?", "polite stop verify call inform supervisor rule"),
+        ("What do you do if you see something suspicious?", "observe report supervisor safe do not confront record"),
+        ("How do you speak to an angry person?", "calm listen polite explain rule help"),
+        ("How do you keep a visitor log?", "name time id purpose accurate record"),
+        ("Why is honesty important in this job?", "trust safety access responsibility report"),
+    ]),
+})
+POOL_LABELS.update({k: v[0] for k, v in EXTRA_ROLES.items() if k.startswith("uae_")})
+
 MODULE_LABELS = {"voice": "Voice interview", "typing": "Typing test", "reading": "Reading aloud",
                  "quiz": "English and customer-scenario quiz", "aptitude": "Aptitude (numbers, logic, data checking)"}
 
