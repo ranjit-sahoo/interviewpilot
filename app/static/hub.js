@@ -9,6 +9,7 @@ const STYLE=`body[data-view^="h-"] .layout{display:none}#hubRoot{display:none}bo
 #hubRoot textarea,#hubRoot input[type=text],#hubRoot input[type=number],#hubRoot input[type=tel],#hubRoot input[type=date],#hubRoot input[type=time],#hubRoot input[type=datetime-local],#hubRoot select{width:100%;margin:4px 0 8px}
 #hubRoot .cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(220px,1fr);gap:10px;overflow-x:auto;padding-bottom:8px}#hubRoot .col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px}
 #hubRoot .pc{background:#0d1426;border:1px solid var(--line);border-radius:10px;padding:8px;margin:6px 0;font-size:14px}#hubRoot button.sm{min-height:36px;padding:4px 10px;font-size:13px}
+#hubRoot input[type=tel],#hubRoot input[type=number],#hubRoot input[type=date],#hubRoot input[type=datetime-local],#hubRoot input[type=file]{background:var(--card2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;width:100%}
 #hubRoot pre{white-space:pre-wrap;background:#0d1426;border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:14px}
 #hubRoot .pass{font-size:17px;line-height:1.7;background:#0d1426;border-radius:12px;padding:12px;user-select:none}
 body.lite *{animation:none!important;transition:none!important}body.lite .hero .strip,body.lite .hero .feat{display:none!important}`;
